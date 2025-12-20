@@ -1,0 +1,665 @@
+:root {
+    --bg: #0b0f17;
+    --text: #e8eef9;
+    --muted: #9aa8bf;
+    --line: rgba(255, 255, 255, 0.08);
+    --radius: 12px;
+    --accent: rgba(79, 124, 255, 0.95);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+.rc-page {
+    height: 100%;
+    overflow: hidden;
+    background: radial-gradient(1200px 800px at 20% 0%, rgba(79, 124, 255, 0.18), transparent 55%),
+    radial-gradient(900px 600px at 100% 40%, rgba(255, 77, 79, 0.12), transparent 60%),
+    var(--bg);
+    color: var(--text);
+}
+.rc-root {
+    height: 100vh; /* 화면 꽉 채움 */
+    display: flex;
+    flex-direction: column;
+}
+.rc-3row {
+    height: 100%;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 0.9fr 1.05fr 1.05fr;
+    gap: 0;
+}
+
+.rc-row {
+    min-height: 0;
+    overflow: hidden;
+    display: grid;
+    gap: 0;
+}
+
+.rc-row--time {
+    grid-template-columns: 1fr;
+}
+
+.rc-row--team {
+    grid-template-columns: 0.8fr 2fr;
+}
+
+.rc-card {
+    border: 1px solid var(--line);
+    border-radius: 0;
+    background: rgba(18, 26, 38, 0.72);
+    padding: 8px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.rc-card--fill {
+    overflow: hidden;
+}
+
+/* ===== 헤더 ===== */
+.rc-time-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid var(--line);
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.rc-time-header__main {
+    font-size: 13px;
+    font-weight: 900;
+}
+
+/* ===== 버튼 ===== */
+.rc-btn {
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.rc-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.rc-btn--primary {
+    background: rgba(79, 124, 255, 0.2);
+    border-color: rgba(79, 124, 255, 0.35);
+}
+
+.rc-btn--ghost {
+    background: transparent;
+}
+
+.rc-btn--mini {
+    padding: 6px 9px;
+}
+
+.rc-btn--mini2 {
+    padding: 6px 9px;
+    border-radius: 10px;
+}
+
+.rc-btn--pill {
+    padding: 7px 10px;
+}
+
+.rc-btn--compact {
+    padding: 6px 8px;
+    font-size: 11px;
+}
+
+/* ===== 입력 ===== */
+.rc-input {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    outline: none;
+}
+
+/* =========================
+   ✅ 시간 영역
+   (1) 라벨은 박스 밖
+   (2) 전체시간/공격시간 가운데 정렬
+   ========================= */
+
+.rc-time-merged {
+    display: grid;
+    grid-template-rows: auto auto auto;
+    gap: 0;
+}
+
+.rc-time-grid {
+    position: relative;
+    display: grid;
+
+    /* 현재쿼터 조금 줄이고, 공격시간 조금 키움 */
+    grid-template-columns: 1fr 1.55fr 1.45fr;
+
+    gap: 0;
+    align-items: stretch;
+}
+
+.rc-time-grid::before,
+.rc-time-grid::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.12);
+    pointer-events: none;
+}
+
+.rc-time-grid::before {
+    left: calc(100% * (1 / (1 + 1.55 + 1.45)));
+}
+
+.rc-time-grid::after {
+    left: calc(100% * ((1 + 1.55) / (1 + 1.55 + 1.45)));
+}
+
+.rc-time-cell {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    padding: 10px 10px;
+}
+
+.rc-time-cell--left {
+    justify-content: flex-start;
+    gap: 6px;
+}
+
+.rc-time-cell--mid {
+    justify-content: flex-start;
+}
+
+.rc-time-cell--right {
+    justify-content: flex-end;
+}
+
+/* ✅ 요청: 전체시간/공격시간 가운데 정렬 */
+.rc-time-cell--center {
+    justify-content: center !important;
+}
+
+.rc-time-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 900;
+}
+
+.rc-time-qnum {
+    font-size: 16px;
+    font-weight: 900;
+}
+
+.rc-time-value {
+    font-size: 16px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+}
+
+.rc-time-value--accent {
+    color: var(--accent);
+}
+
+/* 버튼 줄 */
+.rc-time-rowbtns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    min-width: 0;
+}
+
+/* ✅ 시간만 박스 */
+.rc-time-click {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+
+    border: 1px solid var(--line);
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+.rc-time-click:active {
+    transform: translateY(1px);
+}
+
+/* ===== 팀 ===== */
+.rc-team {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-height: 0;
+}
+
+.rc-team__header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.rc-team__scoretext {
+    font-size: 22px;
+    font-weight: 900;
+    padding: 0 2px;
+    min-width: 28px;
+    text-align: right;
+}
+
+.rc-team__onebox {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: rgba(0, 0, 0, 0.14);
+    padding: 8px;
+    overflow: hidden;
+}
+
+.rc-team__meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.rc-meta-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 800;
+}
+
+.rc-meta-value {
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.rc-mini-title {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+
+.rc-team__controls-row {
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 10px;
+}
+
+.rc-score-2rows {
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 6px;
+}
+
+.rc-score-2rows__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.rc-btn-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* ===== 선수 ===== */
+.rc-players {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+}
+
+.rc-players__head {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 6px;
+}
+.rc-stathead {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 900;
+    opacity: 0.75;
+}
+
+.rc-statgrid {
+    display: flex;
+    flex-direction: column;
+    gap: 0; /* 박스 간격 제거 */
+}
+
+/* 선수 1줄(행) */
+.rc-statrow2 {
+    display: grid;
+    grid-template-columns: 22px 1fr 1fr 1fr 1fr; /* 등번호 + 4스탯 */
+    align-items: center;
+    gap: 3px;              /* 칸 간 간격만 최소 */
+    padding-right: 0;  /* 오른쪽 여백 제거 */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12); /* ✅ 선만 */
+    background: transparent !important; /* ✅ 박스 배경 제거 */
+    border-radius: 0 !important;        /* ✅ 둥근 박스 제거 */
+    box-shadow: none !important;        /* ✅ 그림자 제거 */
+}
+
+/* 등번호도 박스 느낌 없게 */
+.rc-no {
+    color: #ffd54a; /* 노란색 */
+    text-align: left;
+    font-weight: 900;
+    opacity: 0.9;
+}
+
+/* 각 스탯 칸: 기존에 카드/박스처럼 보이면 다 제거 */
+.rc-statcell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* 오른쪽 끝까지 밀지 않음 */
+    gap: 4px;
+
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+}
+
+/* 숫자만 깔끔하게 */
+.rc-num {
+    font-weight: 900;
+    font-size: 14px;
+    line-height: 1;
+    min-width: 14px;
+    text-align: center;
+}
+
+/* +1 버튼은 작게(공간 절약) */
+.rc-plus {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: transparent;
+    color: #eef3ff;
+    border-radius: 9px;
+    padding: 3px 7px;
+    font-weight: 900;
+    font-size: 11px;
+    line-height: 1;
+}
+.rc-empty {
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-weight: 800;
+    font-size: 12px;
+    height: 100%;
+    grid-row: 1 / span 5;
+}
+
+/* =========================
+   ✅ 전체 시간 변경 모달
+   ========================= */
+.tm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.72);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+}
+
+.tm-panel {
+    width: min(92vw, 420px);
+    background: #0e1420;
+    color: #eef3ff;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.tm-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tm-title {
+    font-weight: 900;
+    font-size: 14px;
+}
+
+.tm-x {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: transparent;
+    color: #eef3ff;
+    border-radius: 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-weight: 900;
+}
+
+.tm-body {
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+}
+
+.tm-row {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 10px;
+    align-items: center;
+}
+
+.tm-label {
+    font-size: 12px;
+    color: rgba(238, 243, 255, 0.7);
+    font-weight: 800;
+}
+
+.tm-input {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #eef3ff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 900;
+    outline: none;
+}
+
+.tm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.tm-btn {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #eef3ff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 900;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.tm-btn--ghost {
+    background: transparent;
+}
+
+.tm-btn--primary {
+    background: rgba(79, 124, 255, 0.18);
+    border-color: rgba(79, 124, 255, 0.3);
+}
+
+.tm-hint {
+    font-size: 12px;
+    color: rgba(238, 243, 255, 0.65);
+}
+/* ===============================
+   개인 기록: 위 점수 / 아래 +1 버튼
+   =============================== */
+
+/* 한 줄(등번호 + 4스탯)은 그대로 */
+.rc-statrow2 {
+    align-items: stretch; /* 세로로 꽉 채우게 */
+}
+
+/* 각 스탯 칸을 세로 배치로 변경 */
+.rc-statcell {
+    display: flex;
+    flex-direction: column;      /* ✅ 위아래 */
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+/* 점수는 위에 크게/진하게 */
+.rc-num {
+    font-weight: 900;
+    font-size: 14px;
+    line-height: 1;
+    min-width: 0; /* 줄바꿈/축소 방지 */
+}
+
+/* +1 버튼은 아래에 작게 */
+.rc-plus {
+    padding: 3px 7px;
+    font-size: 11px;
+    line-height: 1;
+    border-radius: 10px;
+}
+
+/* (선택) 칸 높이를 조금만 확보해서 눌림 영역 안정화 */
+.rc-statrow2 {
+    padding: 3px 0;
+}
+/* 등번호: 세로 가운데 + 살짝 아래로 */
+.rc-no {
+    display: flex;
+    align-items: center;    /* 세로 가운데 */
+    justify-content: flex-start;
+    transform: translateY(1px); /* ✅ 조금 내려줌 (원하는 만큼 2~6px로 조절) */
+    line-height: 1;
+}
+/* 시간 영역(rc-card--fill)이 남는 높이를 잡아먹는 문제 해결 */
+.rc-card.rc-card--fill {
+    flex: 0 0 auto !important;  /* ✅ 더 이상 남는 공간을 채우지 않게 */
+    height: auto !important;
+    min-height: 0 !important;
+    padding-bottom: 10px !important; /* ✅ 하단 여백도 살짝 줄임(원하면 6~12로 조절) */
+}
+.rc-body,
+.rc-teams {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+/* ====== 전체: 스크롤 완전 금지 + 화면 고정 ====== */
+html,
+body {
+    height: 100%;
+    overflow: hidden !important;
+}
+
+.rc-page {
+    height: 100vh;                /* 화면 고정 */
+    overflow: hidden !important;  /* 스크롤 금지 */
+}
+
+/* ====== 3줄 grid: 시간은 "내용만큼(auto)" / 팀 2줄은 "남은 높이 반반" ====== */
+.rc-3row {
+    height: 100vh;
+    overflow: hidden !important;
+
+    /* 핵심: 1행(auto) + 2행/3행 동일 비율 */
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr) !important;
+}
+
+/* 각 row도 스크롤 금지 */
+.rc-row {
+    overflow: hidden !important;
+}
+
+/* ====== 시간 row 자체가 커지지 않게(패딩/여백 최소화) ====== */
+.rc-row.rc-row--time {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* 시간 카드: 내용만큼만 + 하단 여백 줄이기 */
+.rc-card.rc-time-card {
+    padding: 10px 12px 0px !important; /* 하단 줄임 */
+    margin: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
+
+/* 시간 카드 내부 요소들 간격도 살짝 줄여서 높이 절약 */
+.rc-time-grid {
+    row-gap: 10px !important;
+}
+
+.rc-time-controls {
+    gap: 10px !important;
+}
+
+/* 시간(auto) + A팀(작게) + B팀(크게) */
+.rc-3row {
+    grid-template-rows: auto minmax(0, 0.95fr) minmax(0, 1.15fr) !important;
+}
+/* 선수 영역/리스트가 스크롤 생기지 않게 강제 (요청대로 스크롤 금지) */
+.rc-statgrid,
+.rc-team-right,
+.rc-team {
+    overflow: hidden !important;
+}
