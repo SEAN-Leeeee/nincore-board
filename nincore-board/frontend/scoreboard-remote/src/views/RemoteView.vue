@@ -7,6 +7,6 @@ import RemoteControl from "@/components/remote/RemoteControl.vue";
 
 export default {
   name: "RemoteView",
-  components: { RemoteControl }
+  components: { RemoteControl },
 };
 </script>

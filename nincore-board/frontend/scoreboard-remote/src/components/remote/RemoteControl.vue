@@ -1,7 +1,6 @@
 <template>
   <div class="rc-page">
     <div class="rc-3row">
-      <!-- ===== 1) 시간 영역 ===== -->
       <section class="rc-row rc-row--time">
         <div class="rc-card rc-time-card">
           <div class="rc-time-header">
@@ -10,7 +9,6 @@
           </div>
 
           <div class="rc-time-merged">
-            <!-- Row 1 -->
             <div class="rc-time-grid">
               <div class="rc-time-cell rc-time-cell--left">
                 <span class="rc-time-label">현재쿼터</span>
@@ -30,7 +28,6 @@
               </div>
             </div>
 
-            <!-- Row 2 -->
             <div class="rc-time-grid rc-time-grid--row2">
               <div class="rc-time-cell rc-time-cell--left rc-time-cell--center">
                 <div class="rc-time-rowbtns">
@@ -58,7 +55,6 @@
               </div>
             </div>
 
-            <!-- Row 3 -->
             <div class="rc-time-grid rc-time-grid--row3">
               <div class="rc-time-cell rc-time-cell--left"></div>
 
@@ -85,12 +81,11 @@
         </div>
       </section>
 
-      <!-- ===== 2) A팀 ===== -->
       <section class="rc-row rc-row--team">
         <div class="rc-card rc-card--fill">
           <div class="rc-team">
             <div class="rc-team__header">
-              <input class="rc-input" v-model="teams.A.name" />
+              <input class="rc-input" v-model="teams.A.name" placeholder="Home" />
               <div class="rc-team__scoretext">{{ teams.A.score }}</div>
             </div>
 
@@ -180,12 +175,11 @@
         </div>
       </section>
 
-      <!-- ===== 3) B팀 ===== -->
       <section class="rc-row rc-row--team">
         <div class="rc-card rc-card--fill">
           <div class="rc-team">
             <div class="rc-team__header">
-              <input class="rc-input" v-model="teams.B.name" />
+              <input class="rc-input" v-model="teams.B.name" placeholder="Away" />
               <div class="rc-team__scoretext">{{ teams.B.score }}</div>
             </div>
 
@@ -276,7 +270,7 @@
       </section>
     </div>
 
-    <!-- ===== 전체시간 변경 모달 ===== -->
+
     <div v-if="timeModal.open" class="tm-overlay" @click.self="closeTimeModal">
       <div class="tm-panel">
         <div class="tm-head">
@@ -304,7 +298,7 @@
       </div>
     </div>
 
-    <!-- ✅ 선수 변경 모달 -->
+
     <RosterModal
         v-if="rosterModal.open"
         :team="rosterModal.team"
@@ -319,7 +313,7 @@
 <script>
 import "./remote-control.css";
 import RosterModal from "./RosterModal.vue";
-import { publishState } from "@/shared/stateChannel";
+import { connectWS, sendCommand } from "@/shared/wsClient";
 
 export default {
   name: "RemoteControl",
@@ -328,8 +322,8 @@ export default {
     return {
       quarter: 1,
       teams: {
-        A: { name: "A팀", score: 0, fouls: 0 },
-        B: { name: "B팀", score: 0, fouls: 0 }
+        A: { name: "Home", score: 0, fouls: 0 },
+        B: { name: "Away", score: 0, fouls: 0 }
       },
 
       gameClockSec: 10 * 60,
@@ -383,6 +377,49 @@ export default {
   },
   mounted() {
     this.pushState();
+
+    connectWS((s) => {
+      if (!s) return;
+      if (typeof s.quarter === "number") this.quarter = s.quarter;
+      if (typeof s.gameClockSec === "number") this.gameClockSec = s.gameClockSec;
+      if (typeof s.shotClockSec === "number") this.shotClockSec = s.shotClockSec;
+
+      if (typeof s.isGameRunning === "boolean") this.isGameRunning = s.isGameRunning;
+      if (typeof s.isShotRunning === "boolean") this.isShotRunning = s.isShotRunning;
+
+      if (s.teams) {
+        if (s.teams.Home || s.teams.Away) this.teams = s.teams;
+        else if (s.teams.A || s.teams.B) {
+          this.teams = {
+            Home: s.teams.A,
+            Away: s.teams.B
+          };
+        }
+      }
+
+      if (s.players) {
+        if (s.players.Home || s.players.Away) this.players = s.players;
+        else if (s.players.A || s.players.B) {
+          this.players = {
+            Home: s.players.A || [],
+            Away: s.players.B || []
+          };
+        }
+      }
+
+      if (s.rosterPlayers) {
+        if (s.rosterPlayers.Home || s.rosterPlayers.Away) this.rosterPlayers = s.rosterPlayers;
+        else if (s.rosterPlayers.A || s.rosterPlayers.B) {
+          this.rosterPlayers = {
+            Home: s.rosterPlayers.A || [],
+            Away: s.rosterPlayers.B || []
+          };
+        }
+      }
+
+      if (s.timeModal) this.timeModal = s.timeModal;
+      if (s.rosterModal) this.rosterModal = s.rosterModal;
+    });
   },
   beforeDestroy() {
     this.stopGameClock();
@@ -402,7 +439,8 @@ export default {
       };
     },
     pushState() {
-      publishState(this.buildState());
+      const next = this.buildState();
+      sendCommand("STATE_SET", JSON.stringify(next));
     },
 
     resetAll() {
@@ -443,6 +481,7 @@ export default {
     },
 
     openRoster(teamKey) {
+      if (teamKey !== "Home" && teamKey !== "Away") return;
       this.rosterModal.team = teamKey;
       this.rosterModal.open = true;
       this.pushState();

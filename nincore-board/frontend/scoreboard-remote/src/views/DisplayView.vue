@@ -8,7 +8,7 @@ import ScoreboardDisplay from "@/components/display/ScoreBoardDisplay.vue";
 export default {
   name: "DisplayView",
   components: {
-    ScoreboardDisplay
-  }
+    ScoreboardDisplay,
+  },
 };
 </script>

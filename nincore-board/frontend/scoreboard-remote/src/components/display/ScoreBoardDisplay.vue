@@ -3,7 +3,6 @@
     <div class="sb-skin" :style="skinStyle">
       <div class="sb-bg"></div>
 
-      <!-- LEFT PANEL (A팀) -->
       <section class="sb-panel sb-panel--left">
         <div class="sb-head">
           <span class="h-no">NO</span>
@@ -13,7 +12,7 @@
         </div>
 
         <div class="sb-list">
-          <div v-for="(p, idx) in leftPlayers" :key="'L' + idx" class="sb-row">
+          <div v-for="(p, idx) in homePlayers" :key="'H' + idx" class="sb-row">
             <span class="c-no">{{ p.no }}</span>
             <span class="c-name">{{ p.name }}</span>
             <span class="c-f">{{ p.f }}</span>
@@ -22,39 +21,33 @@
         </div>
       </section>
 
-      <!-- CENTER PANEL -->
       <section class="sb-center">
-        <!-- 팀명(상단) -->
         <div class="sb-center-teamnames">
-          <span class="sb-teamname sb-teamname--left">{{ leftTeamName }}</span>
+          <span class="sb-teamname sb-teamname--left">{{ homeTeamName }}</span>
           <span class="sb-teamname sb-teamname--sep">:</span>
-          <span class="sb-teamname sb-teamname--right">{{ rightTeamName }}</span>
+          <span class="sb-teamname sb-teamname--right">{{ awayTeamName }}</span>
         </div>
 
-        <!-- 전체 시간 -->
         <div class="sb-center-clock">{{ gameClockText }}</div>
 
-        <!-- 점수 + 쿼터(점수 사이) -->
         <div class="sb-center-scores-under-team">
-          <div class="sb-score-under sb-score-under--left">{{ leftScore }}</div>
+          <div class="sb-score-under sb-score-under--left">{{ homeScore }}</div>
           <div class="sb-quarterbox" aria-label="quarter">{{ quarter }}</div>
-          <div class="sb-score-under sb-score-under--right">{{ rightScore }}</div>
+          <div class="sb-score-under sb-score-under--right">{{ awayScore }}</div>
         </div>
 
-        <!-- 샷클락 + T-FOUL(좌/우) -->
         <div class="sb-shotrow">
-          <div class="sb-tfoul sb-tfoul--left">T-FOUL {{ leftTeamFouls }}</div>
+          <div class="sb-tfoul sb-tfoul--left">T-FOUL {{ homeTeamFouls }}</div>
 
           <div class="sb-shot">
             <div class="sb-shot-label">샷클락</div>
             <div class="sb-shot-value">{{ shotClockText }}</div>
           </div>
 
-          <div class="sb-tfoul sb-tfoul--right">T-FOUL {{ rightTeamFouls }}</div>
+          <div class="sb-tfoul sb-tfoul--right">T-FOUL {{ awayTeamFouls }}</div>
         </div>
       </section>
 
-      <!-- RIGHT PANEL (B팀) -->
       <section class="sb-panel sb-panel--right">
         <div class="sb-head">
           <span class="h-no">NO</span>
@@ -64,7 +57,7 @@
         </div>
 
         <div class="sb-list">
-          <div v-for="(p, idx) in rightPlayers" :key="'R' + idx" class="sb-row">
+          <div v-for="(p, idx) in awayPlayers" :key="'A' + idx" class="sb-row">
             <span class="c-no">{{ p.no }}</span>
             <span class="c-name">{{ p.name }}</span>
             <span class="c-f">{{ p.f }}</span>
@@ -78,36 +71,39 @@
 
 <script>
 import "./scoreboard-display.css";
+import { connectWS } from "@/shared/wsClient";
 
 export default {
   name: "ScoreBoardDisplay",
   data() {
     return {
+      state: null,
+
       baseW: 1200,
       baseH: 600,
 
-      leftTeamName: "창원",
-      rightTeamName: "안양",
+      homeTeamName: "Home",
+      awayTeamName: "Away",
 
       quarter: 4,
 
-      gameClockSec: 87, // 1:27
+      gameClockSec: 87,
       shotClockSec: 24,
 
-      leftScore: 77,
-      rightScore: 71,
+      homeScore: 77,
+      awayScore: 71,
 
-      leftTeamFouls: 4,
-      rightTeamFouls: 14,
+      homeTeamFouls: 4,
+      awayTeamFouls: 14,
 
-      leftPlayers: [
+      homePlayers: [
         { no: 1, name: "이관희", f: 1, p: 11 },
         { no: 4, name: "이재도", f: 2, p: 17 },
         { no: 9, name: "정희재", f: 4, p: 3 },
         { no: 10, name: "윤원상", f: 1, p: 6 },
         { no: 50, name: "마레이", f: 4, p: 16 }
       ],
-      rightPlayers: [
+      awayPlayers: [
         { no: 6, name: "박지훈", f: 3, p: 8 },
         { no: 10, name: "문성곤", f: 3, p: 9 },
         { no: 11, name: "양희종", f: 0, p: 5 },
@@ -137,11 +133,59 @@ export default {
   mounted() {
     this.updateScale();
     window.addEventListener("resize", this.updateScale, { passive: true });
+
+    connectWS((s) => {
+      this.state = s;
+      this.applyStateToView(s);
+    });
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.updateScale);
   },
   methods: {
+    applyStateToView(s) {
+      if (!s) return;
+
+      if (typeof s.quarter === "number") this.quarter = s.quarter;
+
+      const teams = s.teams || {};
+      const homeTeam = teams.Home || teams.A;
+      const awayTeam = teams.Away || teams.B;
+
+      if (homeTeam && awayTeam) {
+        this.homeTeamName = homeTeam.name ?? this.homeTeamName;
+        this.awayTeamName = awayTeam.name ?? this.awayTeamName;
+
+        this.homeScore = Number(homeTeam.score ?? this.homeScore);
+        this.awayScore = Number(awayTeam.score ?? this.awayScore);
+
+        this.homeTeamFouls = Number(homeTeam.fouls ?? this.homeTeamFouls);
+        this.awayTeamFouls = Number(awayTeam.fouls ?? this.awayTeamFouls);
+      }
+
+      const roster = s.rosterPlayers || {};
+      const homeRoster = roster.Home || roster.A;
+      const awayRoster = roster.Away || roster.B;
+
+      if (homeRoster && awayRoster) {
+        const toRow = (p) => ({
+          no: p.no ?? "",
+          name: p.name ?? "",
+          f: typeof p.f === "number" ? p.f : 0,
+          p: typeof p.p === "number" ? p.p : 0
+        });
+
+        this.homePlayers = (homeRoster || [])
+          .filter((p) => p.selected)
+          .slice(0, 5)
+          .map(toRow);
+
+        this.awayPlayers = (awayRoster || [])
+          .filter((p) => p.selected)
+          .slice(0, 5)
+          .map(toRow);
+      }
+    },
     updateScale() {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
