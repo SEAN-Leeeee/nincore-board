@@ -85,14 +85,14 @@
         <div class="rc-card rc-card--fill">
           <div class="rc-team">
             <div class="rc-team__header">
-              <input class="rc-input" v-model="teams.A.name" placeholder="Home" />
-              <div class="rc-team__scoretext">{{ teams.A.score }}</div>
+              <input class="rc-input" v-model="teams.Home.name" placeholder="Home" />
+              <div class="rc-team__scoretext">{{ teams.Home.score }}</div>
             </div>
 
             <div class="rc-team__onebox">
               <div class="rc-team__meta-row">
                 <div class="rc-meta-label">팀 파울</div>
-                <div class="rc-meta-value">{{ teams.A.fouls }}</div>
+                <div class="rc-meta-value">{{ teams.Home.fouls }}</div>
               </div>
 
               <div class="rc-team__controls-row">
@@ -100,15 +100,15 @@
                   <div class="rc-mini-title">점수</div>
                   <div class="rc-score-2rows">
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="addTeamScore('A', 1)">+1</button>
-                      <button class="rc-btn rc-btn--pill" @click="addTeamScore('A', 2)">+2</button>
+                      <button class="rc-btn rc-btn--pill" @click="addTeamScore('Home', 1)">+1</button>
+                      <button class="rc-btn rc-btn--pill" @click="addTeamScore('Home', 2)">+2</button>
                     </div>
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="addTeamScore('A', 3)">+3</button>
+                      <button class="rc-btn rc-btn--pill" @click="addTeamScore('Home', 3)">+3</button>
                       <button
                           class="rc-btn rc-btn--pill rc-btn--ghost"
-                          @click="addTeamScore('A', -1)"
-                          :disabled="teams.A.score <= 0"
+                          @click="addTeamScore('Home', -1)"
+                          :disabled="teams.Home.score <= 0"
                       >
                         -1
                       </button>
@@ -119,11 +119,11 @@
                 <div>
                   <div class="rc-mini-title">파울</div>
                   <div class="rc-btn-row">
-                    <button class="rc-btn rc-btn--pill" @click="addTeamFoul('A', 1)">+1</button>
+                    <button class="rc-btn rc-btn--pill" @click="addTeamFoul('Home', 1)">+1</button>
                     <button
                         class="rc-btn rc-btn--pill rc-btn--ghost"
-                        @click="addTeamFoul('A', -1)"
-                        :disabled="teams.A.fouls <= 0"
+                        @click="addTeamFoul('Home', -1)"
+                        :disabled="teams.Home.fouls <= 0"
                     >
                       -1
                     </button>
@@ -137,37 +137,43 @@
         <div class="rc-card rc-card--fill">
           <div class="rc-players">
             <div class="rc-players__head">
-              <button class="rc-btn rc-btn--mini2" @click="openRoster('A')">선수 변경</button>
+              <button class="rc-btn rc-btn--mini2" @click="openRoster('Home')">선수 변경</button>
               <div class="rc-stathead">
                 <div>득점</div>
                 <div>어시</div>
                 <div>리바</div>
+                <div>스틸</div>
                 <div>파울</div>
               </div>
             </div>
 
-            <div class="rc-statgrid" v-if="activePlayers.A.length">
-              <div class="rc-statrow2" v-for="p in activePlayers.A" :key="p.id">
+            <div class="rc-statgrid" v-if="activePlayers.Home.length">
+              <div class="rc-statrow2" v-for="p in activePlayers.Home" :key="p.id">
                 <div class="rc-no">{{ p.no }}</div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.points }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('A', p.id, 'points', 1)">+1</button>
+                  <button class="rc-plus" @click="addPlayerStat('Home', p.id, 'points', 1)">+1</button>
                 </div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.assists }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('A', p.id, 'assists', 1)">+1</button>
+                  <button class="rc-plus" @click="addPlayerStat('Home', p.id, 'assists', 1)">+1</button>
                 </div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.rebounds }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('A', p.id, 'rebounds', 1)">+1</button>
+                  <button class="rc-plus" @click="addPlayerStat('Home', p.id, 'rebounds', 1)">+1</button>
+                </div>
+
+                <div class="rc-statcell">
+                  <div class="rc-num">{{ p.steals }}</div>
+                  <button class="rc-plus" @click="addPlayerStat('Home', p.id, 'steals', 1)">+1</button>
                 </div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.fouls }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('A', p.id, 'fouls', 1)">+1</button>
+                  <button class="rc-plus" @click="addPlayerStat('Home', p.id, 'fouls', 1)">+1</button>
                 </div>
               </div>
             </div>
@@ -179,14 +185,14 @@
         <div class="rc-card rc-card--fill">
           <div class="rc-team">
             <div class="rc-team__header">
-              <input class="rc-input" v-model="teams.B.name" placeholder="Away" />
-              <div class="rc-team__scoretext">{{ teams.B.score }}</div>
+              <input class="rc-input" v-model="teams.Away.name" placeholder="Away" />
+              <div class="rc-team__scoretext">{{ teams.Away.score }}</div>
             </div>
 
             <div class="rc-team__onebox">
               <div class="rc-team__meta-row">
                 <div class="rc-meta-label">팀 파울</div>
-                <div class="rc-meta-value">{{ teams.B.fouls }}</div>
+                <div class="rc-meta-value">{{ teams.Away.fouls }}</div>
               </div>
 
               <div class="rc-team__controls-row">
@@ -194,15 +200,15 @@
                   <div class="rc-mini-title">점수</div>
                   <div class="rc-score-2rows">
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="addTeamScore('B', 1)">+1</button>
-                      <button class="rc-btn rc-btn--pill" @click="addTeamScore('B', 2)">+2</button>
+                      <button class="rc-btn rc-btn--pill" @click="addTeamScore('Away', 1)">+1</button>
+                      <button class="rc-btn rc-btn--pill" @click="addTeamScore('Away', 2)">+2</button>
                     </div>
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="addTeamScore('B', 3)">+3</button>
+                      <button class="rc-btn rc-btn--pill" @click="addTeamScore('Away', 3)">+3</button>
                       <button
                           class="rc-btn rc-btn--pill rc-btn--ghost"
-                          @click="addTeamScore('B', -1)"
-                          :disabled="teams.B.score <= 0"
+                          @click="addTeamScore('Away', -1)"
+                          :disabled="teams.Away.score <= 0"
                       >
                         -1
                       </button>
@@ -213,11 +219,11 @@
                 <div>
                   <div class="rc-mini-title">파울</div>
                   <div class="rc-btn-row">
-                    <button class="rc-btn rc-btn--pill" @click="addTeamFoul('B', 1)">+1</button>
+                    <button class="rc-btn rc-btn--pill" @click="addTeamFoul('Away', 1)">+1</button>
                     <button
                         class="rc-btn rc-btn--pill rc-btn--ghost"
-                        @click="addTeamFoul('B', -1)"
-                        :disabled="teams.B.fouls <= 0"
+                        @click="addTeamFoul('Away', -1)"
+                        :disabled="teams.Away.fouls <= 0"
                     >
                       -1
                     </button>
@@ -231,37 +237,43 @@
         <div class="rc-card rc-card--fill">
           <div class="rc-players">
             <div class="rc-players__head">
-              <button class="rc-btn rc-btn--mini2" @click="openRoster('B')">선수 변경</button>
+              <button class="rc-btn rc-btn--mini2" @click="openRoster('Away')">선수 변경</button>
               <div class="rc-stathead">
                 <div>득점</div>
                 <div>어시</div>
                 <div>리바</div>
+                <div>스틸</div>
                 <div>파울</div>
               </div>
             </div>
 
-            <div class="rc-statgrid" v-if="activePlayers.B.length">
-              <div class="rc-statrow2" v-for="p in activePlayers.B" :key="p.id">
+            <div class="rc-statgrid" v-if="activePlayers.Away.length">
+              <div class="rc-statrow2" v-for="p in activePlayers.Away" :key="p.id">
                 <div class="rc-no">{{ p.no }}</div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.points }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('B', p.id, 'points', 1)">+1</button>
+                  <button class="rc-plus" @click="addPlayerStat('Away', p.id, 'points', 1)">+1</button>
                 </div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.assists }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('B', p.id, 'assists', 1)">+1</button>
+                  <button class="rc-plus" @click="addPlayerStat('Away', p.id, 'assists', 1)">+1</button>
                 </div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.rebounds }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('B', p.id, 'rebounds', 1)">+1</button>
+                  <button class="rc-plus" @click="addPlayerStat('Away', p.id, 'rebounds', 1)">+1</button>
+                </div>
+
+                <div class="rc-statcell">
+                  <div class="rc-num">{{ p.steals }}</div>
+                  <button class="rc-plus" @click="addPlayerStat('Away', p.id, 'steals', 1)">+1</button>
                 </div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.fouls }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('B', p.id, 'fouls', 1)">+1</button>
+                  <button class="rc-plus" @click="addPlayerStat('Away', p.id, 'fouls', 1)">+1</button>
                 </div>
               </div>
             </div>
@@ -322,8 +334,8 @@ export default {
     return {
       quarter: 1,
       teams: {
-        A: { name: "Home", score: 0, fouls: 0 },
-        B: { name: "Away", score: 0, fouls: 0 }
+        Home: { name: "Home", score: 0, fouls: 0 },
+        Away: { name: "Away", score: 0, fouls: 0 }
       },
 
       gameClockSec: 10 * 60,
@@ -334,14 +346,14 @@ export default {
       isShotRunning: false,
 
       rosterPlayers: {
-        A: [
+        Home: [
           { id: 1, no: "", name: "", selected: false },
           { id: 2, no: "", name: "", selected: false },
           { id: 3, no: "", name: "", selected: false },
           { id: 4, no: "", name: "", selected: false },
           { id: 5, no: "", name: "", selected: false }
         ],
-        B: [
+        Away: [
           { id: 1, no: "", name: "", selected: false },
           { id: 2, no: "", name: "", selected: false },
           { id: 3, no: "", name: "", selected: false },
@@ -351,13 +363,13 @@ export default {
       },
 
       players: {
-        A: [],
-        B: []
+        Home: [],
+        Away: []
       },
 
       rosterModal: {
         open: false,
-        team: "A"
+        team: "Home"
       },
 
       timeModal: {
@@ -370,8 +382,8 @@ export default {
   computed: {
     activePlayers() {
       return {
-        A: this.players.A,
-        B: this.players.B
+        Home: this.players.Home,
+        Away: this.players.Away
       };
     }
   },
@@ -445,10 +457,10 @@ export default {
 
     resetAll() {
       this.quarter = 1;
-      this.teams.A.score = 0;
-      this.teams.B.score = 0;
-      this.teams.A.fouls = 0;
-      this.teams.B.fouls = 0;
+      this.teams.Home.score = 0;
+      this.teams.Away.score = 0;
+      this.teams.Home.fouls = 0;
+      this.teams.Away.fouls = 0;
       this.resetGameClock();
       this.resetShotClock();
       this.pushState();
@@ -502,7 +514,8 @@ export default {
         points: 0,
         assists: 0,
         rebounds: 0,
-        fouls: 0
+        steals: 0,
+        fouls: 0,
       }));
 
       this.closeRoster();

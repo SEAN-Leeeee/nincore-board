@@ -8,7 +8,7 @@ export function connectWS(onState) {
         webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
         reconnectDelay: 2000,
         onConnect: () => {
-            client.subscribe("/topic/state", (msg) -> {
+            client.subscribe("/topic/state", (msg) => {
                 onState(JSON.parse(msg.body));
             });
             client.publish({ destination: "/app/state.get", body: "" });

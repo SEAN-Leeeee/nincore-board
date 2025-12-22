@@ -1,6 +1,6 @@
 package com.nincore.nincoreboardapi.controller;
 
-import com.nincore.nincoreboardapi.domain.Command;
+import com.nincore.nincoreboardapi.domain.Action;
 import com.nincore.nincoreboardapi.domain.GameState;
 import com.nincore.nincoreboardapi.service.StateService;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ public class StateWsController {
     private final StateService stateService;
 
     @MessageMapping("/command")
-    public void onCommand(Command cmd) {
+    public void onCommand(Action cmd) {
         stateService.apply(cmd);
     }
 

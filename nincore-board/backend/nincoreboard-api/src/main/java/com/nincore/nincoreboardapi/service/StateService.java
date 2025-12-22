@@ -1,8 +1,7 @@
 package com.nincore.nincoreboardapi.service;
 
-import com.nincore.nincoreboardapi.domain.Command;
+import com.nincore.nincoreboardapi.domain.Action;
 import com.nincore.nincoreboardapi.domain.GameState;
-import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -30,7 +29,7 @@ public class StateService {
         return state.get();
     }
 
-    public GameState apply(Command cmd) {
+    public GameState apply(Action cmd) {
         GameState s = state.get();
 
         switch (cmd.getType()) {

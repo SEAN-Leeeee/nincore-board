@@ -76,8 +76,7 @@ body,
     justify-content: space-between;
     gap: 8px;
     border-bottom: 1px solid var(--line);
-    padding-top: 6px;
-    padding-bottom: 6px;
+    padding-bottom: 2px;
 }
 
 .rc-time-header__main {
@@ -191,7 +190,7 @@ body,
     align-items: center;
     gap: 10px;
     white-space: nowrap;
-    padding: 10px 10px;
+    padding: 3px 3px;
 }
 
 .rc-time-cell--left {
@@ -357,7 +356,7 @@ body,
 }
 .rc-stathead {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     gap: 6px;
     font-size: 11px;
     font-weight: 900;
@@ -373,7 +372,7 @@ body,
 /* 선수 1줄(행) */
 .rc-statrow2 {
     display: grid;
-    grid-template-columns: 22px 1fr 1fr 1fr 1fr; /* 등번호 + 4스탯 */
+    grid-template-columns: 22px 1fr 1fr 1fr 1fr 1fr; /* 등번호 + 5스탯 */
     align-items: center;
     gap: 3px;              /* 칸 간 간격만 최소 */
     padding-right: 0;  /* 오른쪽 여백 제거 */
@@ -546,7 +545,7 @@ body,
    개인 기록: 위 점수 / 아래 +1 버튼
    =============================== */
 
-/* 한 줄(등번호 + 4스탯)은 그대로 */
+/* 한 줄(등번호 + 5스탯)은 그대로 */
 .rc-statrow2 {
     align-items: stretch; /* 세로로 꽉 채우게 */
 }
