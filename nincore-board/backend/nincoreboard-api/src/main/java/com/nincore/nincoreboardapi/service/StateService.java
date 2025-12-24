@@ -30,18 +30,19 @@ public class StateService {
     }
 
     public GameState apply(Action cmd) {
+        System.out.println("CMD = " + cmd.getType() + ", payload=" + cmd.getPayload());
         GameState s = state.get();
 
         switch (cmd.getType()) {
             case "HOME_SCORE_PLUS_1"  -> s.setHomeScore(s.getHomeScore() + 1);
             case "AWAY_SCORE_PLUS_1"  -> s.setAwayScore(s.getAwayScore() + 1);
-            case "SET TOTAL_TIME" -> s.setTotalTime(cmd.getPayload());
+            case "SET_TOTAL_TIME" -> s.setTotalTime(cmd.getPayload());
             case "SHOT_RESET_24" -> s.setShotClock(24);
             case "SHOT_RESET_14" -> s.setShotClock(14);
         }
 
         state.set(s);
-        messagingTemplate.convertAndSend("/topic/state", s);
+        messagingTemplate.convertAndSend("/subscribe/state", s);
         return s;
     }
 
