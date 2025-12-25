@@ -85,7 +85,13 @@
         <div class="rc-card rc-card--fill">
           <div class="rc-team">
             <div class="rc-team__header">
-              <input class="rc-input" v-model="teams.Home.name" placeholder="Home" />
+
+              <input
+                class="rc-input"
+                :value="teams.Home.name"
+                placeholder="Home"
+                @change="changeName('Home', $event.target.value)"
+              />
               <div class="rc-team__scoretext">{{ teams.Home.score }}</div>
             </div>
 
@@ -185,7 +191,12 @@
         <div class="rc-card rc-card--fill">
           <div class="rc-team">
             <div class="rc-team__header">
-              <input class="rc-input" v-model="teams.Away.name" placeholder="Away" />
+              <input
+                class="rc-input"
+                :value="teams.Away.name"
+                placeholder="Away"
+                @change="changeName('Away', $event.target.value)"
+              />
               <div class="rc-team__scoretext">{{ teams.Away.score }}</div>
             </div>
 
@@ -325,7 +336,8 @@
 <script>
 import "./remote-control.css";
 import RosterModal from "./RosterModal.vue";
-import { connectWS, sendCommand } from "@/shared/wsClient";
+import {connectWS, sendCommand} from "@/shared/wsClient";
+import {ActionType} from "@/shared/actionTypes";
 
 export default {
   name: "RemoteControl",
@@ -333,9 +345,10 @@ export default {
   data() {
     return {
       quarter: 1,
+      hydratedFromServer: false,
       teams: {
         Home: { name: "Home", score: 0, fouls: 0 },
-        Away: { name: "Away", score: 0, fouls: 0 }
+        Away: { name: "Away", score: 0, fouls: 0 },
       },
 
       gameClockSec: 10 * 60,
@@ -351,14 +364,14 @@ export default {
           { id: 2, no: "", name: "", selected: false },
           { id: 3, no: "", name: "", selected: false },
           { id: 4, no: "", name: "", selected: false },
-          { id: 5, no: "", name: "", selected: false }
+          { id: 5, no: "", name: "", selected: false },
         ],
         Away: [
           { id: 1, no: "", name: "", selected: false },
           { id: 2, no: "", name: "", selected: false },
           { id: 3, no: "", name: "", selected: false },
           { id: 4, no: "", name: "", selected: false },
-          { id: 5, no: "", name: "", selected: false }
+          { id: 5, no: "", name: "", selected: false },
         ]
       },
 
@@ -375,24 +388,29 @@ export default {
       timeModal: {
         open: false,
         mm: "10",
-        ss: "00"
-      }
+        ss: "00",
+      },
     };
   },
   computed: {
     activePlayers() {
       return {
         Home: this.players.Home,
-        Away: this.players.Away
+        Away: this.players.Away,
       };
     }
   },
   mounted() {
-    this.pushState();
-
     connectWS((s) => {
       if (!s) return;
-      if (typeof s.quarter === "number") this.quarter = s.quarter;
+      if (this.hydratedFromServer) return;
+
+      if (typeof s.quarter === "number") {
+        const q = Number(s.quarter);
+        this.quarter = q >= 1 && q <= 4 ? q : 1;
+      } else {
+        this.quarter = 1;
+      }
       if (typeof s.gameClockSec === "number") this.gameClockSec = s.gameClockSec;
       if (typeof s.shotClockSec === "number") this.shotClockSec = s.shotClockSec;
 
@@ -400,11 +418,28 @@ export default {
       if (typeof s.isShotRunning === "boolean") this.isShotRunning = s.isShotRunning;
 
       if (s.teams) {
-        if (s.teams.Home || s.teams.Away) this.teams = s.teams;
-        else if (s.teams.A || s.teams.B) {
+        // Support both {Home/Away} and legacy {A/B}
+        const nextTeams = (s.teams.Home || s.teams.Away)
+          ? s.teams
+          : (s.teams.A || s.teams.B)
+            ? { Home: s.teams.A, Away: s.teams.B }
+            : null;
+
+        if (nextTeams) {
+          const homeName = String(nextTeams.Home?.name ?? "").trim() || "Home";
+          const awayName = String(nextTeams.Away?.name ?? "").trim() || "Away";
+
           this.teams = {
-            Home: s.teams.A,
-            Away: s.teams.B
+            Home: {
+              ...this.teams.Home,
+              ...nextTeams.Home,
+              name: homeName,
+            },
+            Away: {
+              ...this.teams.Away,
+              ...nextTeams.Away,
+              name: awayName,
+            },
           };
         }
       }
@@ -431,6 +466,12 @@ export default {
 
       if (s.timeModal) this.timeModal = s.timeModal;
       if (s.rosterModal) this.rosterModal = s.rosterModal;
+
+      // Final safety guard for quarter
+      if (typeof this.quarter !== "number" || this.quarter < 1 || this.quarter > 4) {
+        this.quarter = 1;
+      }
+      this.hydratedFromServer = true;
     });
   },
   beforeDestroy() {
@@ -450,9 +491,8 @@ export default {
         rosterPlayers: this.rosterPlayers
       };
     },
-    pushState() {
-      const next = this.buildState();
-      sendCommand("STATE_SET", JSON.stringify(next));
+    pushState(state, data) {
+      sendCommand(state, JSON.stringify(data));
     },
 
     resetAll() {
@@ -467,21 +507,37 @@ export default {
     },
 
     changeQuarter(delta) {
-      const next = this.quarter + delta;
-      if (next < 1 || next > 4) return;
-      this.quarter = next;
-      this.pushState();
+      const data = this.quarter + delta;
+      if (data < 1 || data > 4) return;
+      this.quarter = data;
+      const action = ActionType.QUARTER;
+      this.pushState(action, data);
+    },
+
+    changeName(teamKey, nextName) {
+      const fallback = teamKey === "Home" ? "Home" : "Away";
+      const name = String(nextName ?? "").trim() || fallback;
+
+      const team = this.teams[teamKey];
+      team.name = name;
+
+      const action = teamKey === "Home" ? "HOME_SETTING" : "AWAY_SETTING";
+      sendCommand(action, JSON.stringify(team));
     },
 
     addTeamScore(teamKey, delta) {
-      const t = this.teams[teamKey];
-      t.score = Math.max(0, t.score + delta);
-      this.pushState();
+      const team = this.teams[teamKey];
+      team.score = Math.max(0, team.score + delta);
+      const action = teamKey === "Home" ? "HOME_SETTING" : "AWAY_SETTING";
+
+      this.pushState(action, JSON.stringify(team));
     },
     addTeamFoul(teamKey, delta) {
-      const t = this.teams[teamKey];
-      t.fouls = Math.max(0, t.fouls + delta);
-      this.pushState();
+      const team = this.teams[teamKey];
+      team.fouls = Math.max(0, team.fouls + delta);
+      const action = teamKey === "Home" ? "HOME_SETTING" : "AWAY_SETTING";
+
+      this.pushState(action, JSON.stringify(team));
     },
 
     addPlayerStat(teamKey, playerId, field, delta) {
@@ -496,11 +552,9 @@ export default {
       if (teamKey !== "Home" && teamKey !== "Away") return;
       this.rosterModal.team = teamKey;
       this.rosterModal.open = true;
-      this.pushState();
     },
     closeRoster() {
       this.rosterModal.open = false;
-      this.pushState();
     },
     saveRoster({ team, players }) {
       this.rosterPlayers[team] = players;
@@ -603,11 +657,9 @@ export default {
       const ss = this.gameClockSec % 60;
       this.timeModal.mm = String(mm);
       this.timeModal.ss = String(ss).padStart(2, "0");
-      this.pushState();
     },
     closeTimeModal() {
       this.timeModal.open = false;
-      this.pushState();
     },
     applyTimeModal() {
       const mm = parseInt(this.timeModal.mm, 10);

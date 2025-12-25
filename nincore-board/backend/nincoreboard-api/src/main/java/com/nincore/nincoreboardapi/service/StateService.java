@@ -34,11 +34,16 @@ public class StateService {
         GameState s = state.get();
 
         switch (cmd.getType()) {
-            case "HOME_SCORE_PLUS_1"  -> s.setHomeScore(s.getHomeScore() + 1);
-            case "AWAY_SCORE_PLUS_1"  -> s.setAwayScore(s.getAwayScore() + 1);
-            case "SET_TOTAL_TIME" -> s.setTotalTime(cmd.getPayload());
-            case "SHOT_RESET_24" -> s.setShotClock(24);
-            case "SHOT_RESET_14" -> s.setShotClock(14);
+            case "QUARTER" -> s.setQuarter(Integer.parseInt((cmd.getPayload())));
+            case "HOME_SETTING" -> s.setHomeSetting(cmd.getPayload());
+            case "AWAY_SETTING" -> s.setAwaySetting(cmd.getPayload());
+
+
+//            case "HOME_SCORE_PLUS_1"  -> s.setHomeScore(s.getHomeScore() + 1);
+//            case "AWAY_SCORE_PLUS_1"  -> s.setAwayScore(s.getAwayScore() + 1);
+//            case "SET_TOTAL_TIME" -> s.setTotalTime(cmd.getPayload());
+//            case "SHOT_RESET_24" -> s.setShotClock(24);
+//            case "SHOT_RESET_14" -> s.setShotClock(14);
         }
 
         state.set(s);

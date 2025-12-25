@@ -16,9 +16,6 @@ public class StateWsController {
 
     @MessageMapping("/command")
     public void onCommand(Action cmd) {
-        System.out.println("@@@@");
-        System.out.println(cmd.toString());
-        System.out.println("@@@@");
         stateService.apply(cmd);
     }
 

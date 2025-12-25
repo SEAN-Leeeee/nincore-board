@@ -5,13 +5,14 @@ let client = null;
 
 export function connectWS(onState) {
     client = new Client({
-        webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+        webSocketFactory: () => new SockJS("http://localhost:8080/ws-connect"),
         reconnectDelay: 2000,
         onConnect: () => {
-            client.subscribe("/topic/state", (msg) => {
+            client.subscribe("/subscribe/state", (msg) => {
                 onState(JSON.parse(msg.body));
             });
-            client.publish({ destination: "/app/state.get", body: "" });
+
+            client.publish({ destination: "/publish/state", body: "" });
         },
     });
 
@@ -20,8 +21,9 @@ export function connectWS(onState) {
 
 export function sendCommand(type, payload = "") {
     if (!client || !client.connected) return;
+
     client.publish({
-        destination: "/app/command",
+        destination: "/publish/command",
         body: JSON.stringify({ type, payload }),
     });
 }
