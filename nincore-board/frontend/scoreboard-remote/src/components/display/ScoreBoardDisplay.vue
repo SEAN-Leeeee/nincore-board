@@ -87,7 +87,7 @@ export default {
 
       quarter: 1,
 
-      gameClockSec: 10 * 60,
+      gameClockSec: 7 * 60,
       shotClockSec: 24,
 
       homeScore: 0,
@@ -138,21 +138,14 @@ export default {
       if (typeof s.gameClockSec === "number") this.gameClockSec = s.gameClockSec;
       if (typeof s.shotClockSec === "number") this.shotClockSec = s.shotClockSec;
 
-      const teams = s.teams || {};
-      const homeTeam = teams.Home || teams.A;
-      const awayTeam = teams.Away || teams.B;
+      // The state `s` is flat, not nested.
+      this.homeTeamName = s.homeName ?? this.homeTeamName;
+      this.homeScore = Number(s.homeScore ?? this.homeScore);
+      this.homeTeamFouls = Number(s.homeFoul ?? this.homeTeamFouls);
 
-      if (homeTeam) {
-        this.homeTeamName = homeTeam.name ?? this.homeTeamName;
-        this.homeScore = Number(homeTeam.score ?? this.homeScore);
-        this.homeTeamFouls = Number(homeTeam.fouls ?? this.homeTeamFouls);
-      }
-
-      if (awayTeam) {
-        this.awayTeamName = awayTeam.name ?? this.awayTeamName;
-        this.awayScore = Number(awayTeam.score ?? this.awayScore);
-        this.awayTeamFouls = Number(awayTeam.fouls ?? this.awayTeamFouls);
-      }
+      this.awayTeamName = s.awayName ?? this.awayTeamName;
+      this.awayScore = Number(s.awayScore ?? this.awayScore);
+      this.awayTeamFouls = Number(s.awayFoul ?? this.awayTeamFouls);
 
       const players = s.players || {};
       const homePlayers = players.Home || players.A || [];

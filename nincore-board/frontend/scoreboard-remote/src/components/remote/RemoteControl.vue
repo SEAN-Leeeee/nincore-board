@@ -32,7 +32,7 @@
               <div class="rc-time-cell rc-time-cell--left rc-time-cell--center">
                 <div class="rc-time-rowbtns">
                   <button class="rc-btn rc-btn--mini" @click="changeQuarter(-1)" :disabled="quarter <= 1">-1</button>
-                  <button class="rc-btn rc-btn--mini" @click="changeQuarter(1)" :disabled="quarter >= 4">+1</button>
+                  <button class="rc-btn rc-btn--mini" @click="changeQuarter(1)">+1</button>
                 </div>
               </div>
 
@@ -88,17 +88,18 @@
 
               <input
                 class="rc-input"
-                :value="teams.Home.name"
+                :value="teams.Home.homeName"
                 placeholder="Home"
                 @change="changeName('Home', $event.target.value)"
+                maxlength="4"
               />
-              <div class="rc-team__scoretext">{{ teams.Home.score }}</div>
+              <div class="rc-team__scoretext">{{ teams.Home.homeScore }}</div>
             </div>
 
             <div class="rc-team__onebox">
               <div class="rc-team__meta-row">
                 <div class="rc-meta-label">팀 파울</div>
-                <div class="rc-meta-value">{{ teams.Home.fouls }}</div>
+                <div class="rc-meta-value">{{ teams.Home.homeFoul }}</div>
               </div>
 
               <div class="rc-team__controls-row">
@@ -114,7 +115,7 @@
                       <button
                           class="rc-btn rc-btn--pill rc-btn--ghost"
                           @click="addTeamScore('Home', -1)"
-                          :disabled="teams.Home.score <= 0"
+                          :disabled="teams.Home.homeScore <= 0"
                       >
                         -1
                       </button>
@@ -129,7 +130,7 @@
                     <button
                         class="rc-btn rc-btn--pill rc-btn--ghost"
                         @click="addTeamFoul('Home', -1)"
-                        :disabled="teams.Home.fouls <= 0"
+                        :disabled="teams.Home.homeFoul <= 0"
                     >
                       -1
                     </button>
@@ -193,17 +194,18 @@
             <div class="rc-team__header">
               <input
                 class="rc-input"
-                :value="teams.Away.name"
+                :value="teams.Away.awayName"
                 placeholder="Away"
                 @change="changeName('Away', $event.target.value)"
+                maxlength="4"
               />
-              <div class="rc-team__scoretext">{{ teams.Away.score }}</div>
+              <div class="rc-team__scoretext">{{ teams.Away.awayScore }}</div>
             </div>
 
             <div class="rc-team__onebox">
               <div class="rc-team__meta-row">
                 <div class="rc-meta-label">팀 파울</div>
-                <div class="rc-meta-value">{{ teams.Away.fouls }}</div>
+                <div class="rc-meta-value">{{ teams.Away.awayFoul }}</div>
               </div>
 
               <div class="rc-team__controls-row">
@@ -219,7 +221,7 @@
                       <button
                           class="rc-btn rc-btn--pill rc-btn--ghost"
                           @click="addTeamScore('Away', -1)"
-                          :disabled="teams.Away.score <= 0"
+                          :disabled="teams.Away.awayScore <= 0"
                       >
                         -1
                       </button>
@@ -234,7 +236,7 @@
                     <button
                         class="rc-btn rc-btn--pill rc-btn--ghost"
                         @click="addTeamFoul('Away', -1)"
-                        :disabled="teams.Away.fouls <= 0"
+                        :disabled="teams.Away.awayFoul <= 0"
                     >
                       -1
                     </button>
@@ -347,11 +349,11 @@ export default {
       quarter: 1,
       hydratedFromServer: false,
       teams: {
-        Home: { name: "Home", score: 0, fouls: 0 },
-        Away: { name: "Away", score: 0, fouls: 0 },
+        Home: { homeName: "Home", homeScore: 0, homeFoul: 0 },
+        Away: { awayName: "Away", awayScore: 0, awayFoul: 0 },
       },
 
-      gameClockSec: 10 * 60,
+      gameClockSec: 7 * 60,
       shotClockSec: 24,
       gameTimer: null,
       shotTimer: null,
@@ -403,47 +405,24 @@ export default {
   mounted() {
     connectWS((s) => {
       if (!s) return;
-      if (this.hydratedFromServer) return;
 
-      if (typeof s.quarter === "number") {
-        const q = Number(s.quarter);
-        this.quarter = q >= 1 && q <= 4 ? q : 1;
-      } else {
-        this.quarter = 1;
-      }
-      if (typeof s.gameClockSec === "number") this.gameClockSec = s.gameClockSec;
-      if (typeof s.shotClockSec === "number") this.shotClockSec = s.shotClockSec;
+      // Always update state from server
+      if (s.quarter !== undefined) this.quarter = s.quarter;
+      if (s.gameClockSec !== undefined) this.gameClockSec = s.gameClockSec;
+      if (s.shotClockSec !== undefined) this.shotClockSec = s.shotClockSec;
+      if (s.isGameRunning !== undefined) this.isGameRunning = s.isGameRunning;
+      if (s.isShotRunning !== undefined) this.isShotRunning = s.isShotRunning;
 
-      if (typeof s.isGameRunning === "boolean") this.isGameRunning = s.isGameRunning;
-      if (typeof s.isShotRunning === "boolean") this.isShotRunning = s.isShotRunning;
+      // Correctly update team data from flat state
+      if (s.homeName !== undefined) this.teams.Home.homeName = s.homeName;
+      if (s.homeScore !== undefined) this.teams.Home.homeScore = s.homeScore;
+      if (s.homeFoul !== undefined) this.teams.Home.homeFoul = s.homeFoul;
 
-      if (s.teams) {
-        // Support both {Home/Away} and legacy {A/B}
-        const nextTeams = (s.teams.Home || s.teams.Away)
-          ? s.teams
-          : (s.teams.A || s.teams.B)
-            ? { Home: s.teams.A, Away: s.teams.B }
-            : null;
+      if (s.awayName !== undefined) this.teams.Away.awayName = s.awayName;
+      if (s.awayScore !== undefined) this.teams.Away.awayScore = s.awayScore;
+      if (s.awayFoul !== undefined) this.teams.Away.awayFoul = s.awayFoul;
 
-        if (nextTeams) {
-          const homeName = String(nextTeams.Home?.name ?? "").trim() || "Home";
-          const awayName = String(nextTeams.Away?.name ?? "").trim() || "Away";
-
-          this.teams = {
-            Home: {
-              ...this.teams.Home,
-              ...nextTeams.Home,
-              name: homeName,
-            },
-            Away: {
-              ...this.teams.Away,
-              ...nextTeams.Away,
-              name: awayName,
-            },
-          };
-        }
-      }
-
+      // Keep player/roster logic for now, though it might also be buggy
       if (s.players) {
         if (s.players.Home || s.players.Away) this.players = s.players;
         else if (s.players.A || s.players.B) {
@@ -463,15 +442,6 @@ export default {
           };
         }
       }
-
-      if (s.timeModal) this.timeModal = s.timeModal;
-      if (s.rosterModal) this.rosterModal = s.rosterModal;
-
-      // Final safety guard for quarter
-      if (typeof this.quarter !== "number" || this.quarter < 1 || this.quarter > 4) {
-        this.quarter = 1;
-      }
-      this.hydratedFromServer = true;
     });
   },
   beforeDestroy() {
@@ -488,7 +458,7 @@ export default {
         isShotRunning: this.isShotRunning,
         teams: this.teams,
         players: this.players,
-        rosterPlayers: this.rosterPlayers
+        rosterPlayers: this.rosterPlayers,
       };
     },
     pushState(state, data) {
@@ -497,18 +467,29 @@ export default {
 
     resetAll() {
       this.quarter = 1;
-      this.teams.Home.score = 0;
-      this.teams.Away.score = 0;
-      this.teams.Home.fouls = 0;
-      this.teams.Away.fouls = 0;
+      this.teams.Home.homeScore = 0;
+      this.teams.Away.awayScore = 0;
+      this.teams.Home.homeFoul = 0;
+      this.teams.Away.awayFoul = 0;
       this.resetGameClock();
       this.resetShotClock();
-      this.pushState();
+
+      this.pushState(ActionType.QUARTER, this.quarter);
+      this.pushState(ActionType.HOME_SETTING, {
+        homeName: this.teams.Home.homeName,
+        homeScore: this.teams.Home.homeScore,
+        homeFoul: this.teams.Home.homeFoul,
+      });
+      this.pushState(ActionType.AWAY_SETTING, {
+        awayName: this.teams.Away.awayName,
+        awayScore: this.teams.Away.awayScore,
+        awayFoul: this.teams.Away.awayFoul,
+      });
     },
 
     changeQuarter(delta) {
       const data = this.quarter + delta;
-      if (data < 1 || data > 4) return;
+      if (data < 1) return;
       this.quarter = data;
       const action = ActionType.QUARTER;
       this.pushState(action, data);
@@ -516,28 +497,65 @@ export default {
 
     changeName(teamKey, nextName) {
       const fallback = teamKey === "Home" ? "Home" : "Away";
-      const name = String(nextName ?? "").trim() || fallback;
+      let name = String(nextName ?? "").trim() || fallback;
+      name = name.slice(0, 4);
 
       const team = this.teams[teamKey];
-      team.name = name;
+      const payload = {};
 
-      const action = teamKey === "Home" ? "HOME_SETTING" : "AWAY_SETTING";
-      sendCommand(action, JSON.stringify(team));
+      if (teamKey === "Home") {
+        team.homeName = name;
+        payload.homeName = team.homeName;
+        payload.homeScore = team.homeScore;
+        payload.homeFoul = team.homeFoul;
+      } else {
+        team.awayName = name;
+        payload.awayName = team.awayName;
+        payload.awayScore = team.awayScore;
+        payload.awayFoul = team.awayFoul;
+      }
+
+      const action = teamKey === "Home" ? ActionType.HOME_SETTING : ActionType.AWAY_SETTING;
+      this.pushState(action, payload);
     },
 
     addTeamScore(teamKey, delta) {
       const team = this.teams[teamKey];
-      team.score = Math.max(0, team.score + delta);
-      const action = teamKey === "Home" ? "HOME_SETTING" : "AWAY_SETTING";
+      const payload = {};
 
-      this.pushState(action, JSON.stringify(team));
+      if (teamKey === "Home") {
+        team.homeScore = Math.max(0, team.homeScore + delta);
+        payload.homeName = team.homeName;
+        payload.homeScore = team.homeScore;
+        payload.homeFoul = team.homeFoul;
+      } else {
+        team.awayScore = Math.max(0, team.awayScore + delta);
+        payload.awayName = team.awayName;
+        payload.awayScore = team.awayScore;
+        payload.awayFoul = team.awayFoul;
+      }
+
+      const action = teamKey === "Home" ? ActionType.HOME_SETTING : ActionType.AWAY_SETTING;
+      this.pushState(action, payload);
     },
     addTeamFoul(teamKey, delta) {
       const team = this.teams[teamKey];
-      team.fouls = Math.max(0, team.fouls + delta);
-      const action = teamKey === "Home" ? "HOME_SETTING" : "AWAY_SETTING";
+      const payload = {};
 
-      this.pushState(action, JSON.stringify(team));
+      if (teamKey === "Home") {
+        team.homeFoul = Math.max(0, team.homeFoul + delta);
+        payload.homeName = team.homeName;
+        payload.homeScore = team.homeScore;
+        payload.homeFoul = team.homeFoul;
+      } else {
+        team.awayFoul = Math.max(0, team.awayFoul + delta);
+        payload.awayName = team.awayName;
+        payload.awayScore = team.awayScore;
+        payload.awayFoul = team.awayFoul;
+      }
+
+      const action = teamKey === "Home" ? ActionType.HOME_SETTING : ActionType.AWAY_SETTING;
+      this.pushState(action, payload);
     },
 
     addPlayerStat(teamKey, playerId, field, delta) {
@@ -608,7 +626,7 @@ export default {
     },
     resetGameClock() {
       this.stopGameClock();
-      this.gameClockSec = 10 * 60;
+      this.gameClockSec = 7 * 60;
       this.pushState();
     },
     adjustGameClock(delta) {
