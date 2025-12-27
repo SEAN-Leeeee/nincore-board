@@ -19,6 +19,14 @@ public class GameState {
     private int awayScore;
     private int awayFoul;
 
+    public void minusGameTime(int i) {
+        this.gameTime -= i;
+    }
+
+    public void minusShotClock(int i) {
+        this.shotClock -= i;
+    }
+
     public void setGameTime(GameTime payload) {
         this.isGameRunning = payload.isRunning();
 
@@ -55,5 +63,13 @@ public class GameState {
         this.awayName = payload.getAwayName();
         this.awayScore = payload.getAwayScore();
         this.awayFoul = payload.getAwayFoul();
+    }
+
+    public void stopGameRunning(boolean state) {
+        this.isGameRunning = state;
+    }
+
+    public void stopShotClock(boolean state) {
+        this.isShotClockRunning = false;
     }
 }

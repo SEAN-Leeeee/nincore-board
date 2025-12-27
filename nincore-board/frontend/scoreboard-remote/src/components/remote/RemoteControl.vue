@@ -355,8 +355,8 @@ export default {
 
       gameClockSec: 7 * 60,
       shotClockSec: 24,
-      gameTimer: null,
-      shotTimer: null,
+      // gameTimer: null, // 제거
+      // shotTimer: null, // 제거
       isGameRunning: false,
       isShotRunning: false,
 
@@ -413,7 +413,6 @@ export default {
       if (s.isGameRunning !== undefined) this.isGameRunning = s.isGameRunning;
       if (s.isShotRunning !== undefined) this.isShotRunning = s.isShotRunning;
 
-      // Correctly update team data from flat state
       if (s.homeName !== undefined) this.teams.Home.homeName = s.homeName;
       if (s.homeScore !== undefined) this.teams.Home.homeScore = s.homeScore;
       if (s.homeFoul !== undefined) this.teams.Home.homeFoul = s.homeFoul;
@@ -422,7 +421,6 @@ export default {
       if (s.awayScore !== undefined) this.teams.Away.awayScore = s.awayScore;
       if (s.awayFoul !== undefined) this.teams.Away.awayFoul = s.awayFoul;
 
-      // Keep player/roster logic for now, though it might also be buggy
       if (s.players) {
         if (s.players.Home || s.players.Away) this.players = s.players;
         else if (s.players.A || s.players.B) {
@@ -445,54 +443,38 @@ export default {
     });
   },
   beforeDestroy() {
-    this.stopGameClock();
-    this.stopShotClock();
+    // 타이머 정리 로직 제거
   },
   methods: {
-    buildState() {
-      return {
-        quarter: this.quarter,
-        gameClockSec: this.gameClockSec,
-        shotClockSec: this.shotClockSec,
-        isGameRunning: this.isGameRunning,
-        isShotRunning: this.isShotRunning,
-        teams: this.teams,
-        players: this.players,
-        rosterPlayers: this.rosterPlayers,
-      };
-    },
-    pushState(state, data) {
-      sendCommand(state, JSON.stringify(data));
+    pushState(action, payload) {
+      sendCommand(action, payload);
     },
 
     resetAll() {
-      this.quarter = 1;
-      this.teams.Home.homeScore = 0;
-      this.teams.Away.awayScore = 0;
-      this.teams.Home.homeFoul = 0;
-      this.teams.Away.awayFoul = 0;
       this.resetGameClock();
       this.resetShotClock();
 
-      this.pushState(ActionType.QUARTER, this.quarter);
+      this.pushState(ActionType.QUARTER, { isReset: true, quarter: 1 });
+
       this.pushState(ActionType.HOME_SETTING, {
-        homeName: this.teams.Home.homeName,
-        homeScore: this.teams.Home.homeScore,
-        homeFoul: this.teams.Home.homeFoul,
+        isReset: true,
+        homeName: "Home",
+        homeScore: 0,
+        homeFoul: 0,
       });
       this.pushState(ActionType.AWAY_SETTING, {
-        awayName: this.teams.Away.awayName,
-        awayScore: this.teams.Away.awayScore,
-        awayFoul: this.teams.Away.awayFoul,
+        isReset: true,
+        awayName: "Away",
+        awayScore: 0,
+        awayFoul: 0,
       });
+      // TODO: 선수 정보 리셋 로직 추가 필요
     },
 
     changeQuarter(delta) {
-      const data = this.quarter + delta;
-      if (data < 1) return;
-      this.quarter = data;
-      const action = ActionType.QUARTER;
-      this.pushState(action, data);
+      const nextQuarter = this.quarter + delta;
+      if (nextQuarter < 1) return;
+      this.pushState(ActionType.QUARTER, { quarter: nextQuarter });
     },
 
     changeName(teamKey, nextName) {
@@ -500,19 +482,11 @@ export default {
       let name = String(nextName ?? "").trim() || fallback;
       name = name.slice(0, 4);
 
-      const team = this.teams[teamKey];
       const payload = {};
-
       if (teamKey === "Home") {
-        team.homeName = name;
-        payload.homeName = team.homeName;
-        payload.homeScore = team.homeScore;
-        payload.homeFoul = team.homeFoul;
+        payload.homeName = name;
       } else {
-        team.awayName = name;
-        payload.awayName = team.awayName;
-        payload.awayScore = team.awayScore;
-        payload.awayFoul = team.awayFoul;
+        payload.awayName = name;
       }
 
       const action = teamKey === "Home" ? ActionType.HOME_SETTING : ActionType.AWAY_SETTING;
@@ -520,50 +494,22 @@ export default {
     },
 
     addTeamScore(teamKey, delta) {
-      const team = this.teams[teamKey];
-      const payload = {};
-
-      if (teamKey === "Home") {
-        team.homeScore = Math.max(0, team.homeScore + delta);
-        payload.homeName = team.homeName;
-        payload.homeScore = team.homeScore;
-        payload.homeFoul = team.homeFoul;
-      } else {
-        team.awayScore = Math.max(0, team.awayScore + delta);
-        payload.awayName = team.awayName;
-        payload.awayScore = team.awayScore;
-        payload.awayFoul = team.awayFoul;
-      }
-
-      const action = teamKey === "Home" ? ActionType.HOME_SETTING : ActionType.AWAY_SETTING;
+      const payload = { score: delta };
+      const action = teamKey === "Home" ? ActionType.HOME_SCORE : ActionType.AWAY_SCORE;
       this.pushState(action, payload);
     },
     addTeamFoul(teamKey, delta) {
-      const team = this.teams[teamKey];
-      const payload = {};
-
-      if (teamKey === "Home") {
-        team.homeFoul = Math.max(0, team.homeFoul + delta);
-        payload.homeName = team.homeName;
-        payload.homeScore = team.homeScore;
-        payload.homeFoul = team.homeFoul;
-      } else {
-        team.awayFoul = Math.max(0, team.awayFoul + delta);
-        payload.awayName = team.awayName;
-        payload.awayScore = team.awayScore;
-        payload.awayFoul = team.awayFoul;
-      }
-
-      const action = teamKey === "Home" ? ActionType.HOME_SETTING : ActionType.AWAY_SETTING;
+      const payload = { foul: delta };
+      const action = teamKey === "Home" ? ActionType.HOME_FOUL : ActionType.AWAY_FOUL;
       this.pushState(action, payload);
     },
 
     addPlayerStat(teamKey, playerId, field, delta) {
+      // TODO: 서버 전송 로직으로 변경 필요
       const list = this.players[teamKey];
       const p = list.find(x => x.id === playerId);
       if (!p) return;
       p[field] = Math.max(0, (p[field] || 0) + delta);
-      this.pushState();
     },
 
     openRoster(teamKey) {
@@ -575,6 +521,7 @@ export default {
       this.rosterModal.open = false;
     },
     saveRoster({ team, players }) {
+      // TODO: 서버 전송 로직으로 변경 필요
       this.rosterPlayers[team] = players;
 
       const selected = players.filter(p => p.selected).slice(0, 5);
@@ -591,82 +538,46 @@ export default {
       }));
 
       this.closeRoster();
-      this.pushState();
     },
 
+    // === 시간 관련 로직 (서버 전송 방식으로 변경) ===
     toggleGameClock() {
-      if (this.isGameRunning) this.stopGameClock();
-      else this.startGameClock();
+      const payload = { isRunning: !this.isGameRunning };
+      this.pushState(ActionType.GAME_TIME, payload);
     },
     toggleShotClock() {
-      if (this.isShotRunning) this.stopShotClock();
-      else this.startShotClock();
+      const payload = { isRunning: !this.isShotRunning };
+      this.pushState(ActionType.SHOT_CLOCK, payload);
     },
 
-    startGameClock() {
-      if (this.gameTimer) return;
-      this.isGameRunning = true;
-
-      this.gameTimer = setInterval(() => {
-        if (this.gameClockSec <= 0) {
-          this.stopGameClock();
-          return;
-        }
-        this.gameClockSec -= 1;
-        this.pushState();
-      }, 1000);
-
-      this.pushState();
-    },
-    stopGameClock() {
-      if (this.gameTimer) clearInterval(this.gameTimer);
-      this.gameTimer = null;
-      this.isGameRunning = false;
-      this.pushState();
-    },
     resetGameClock() {
-      this.stopGameClock();
-      this.gameClockSec = 7 * 60;
-      this.pushState();
+      const payload = {
+        isRunning: false,
+        isReset: true,
+        resetTime: 7 * 60
+      };
+      this.pushState(ActionType.GAME_TIME, payload);
     },
     adjustGameClock(delta) {
-      this.gameClockSec = Math.max(0, this.gameClockSec + delta);
-      this.pushState();
+      const payload = { adjust: delta };
+      this.pushState(ActionType.GAME_TIME, payload);
     },
 
-    startShotClock() {
-      if (this.shotTimer) return;
-      this.isShotRunning = true;
-
-      this.shotTimer = setInterval(() => {
-        if (this.shotClockSec <= 0) {
-          this.stopShotClock();
-          return;
-        }
-        this.shotClockSec -= 1;
-        this.pushState();
-      }, 1000);
-
-      this.pushState();
-    },
-    stopShotClock() {
-      if (this.shotTimer) clearInterval(this.shotTimer);
-      this.shotTimer = null;
-      this.isShotRunning = false;
-      this.pushState();
-    },
     resetShotClock() {
-      this.stopShotClock();
-      this.shotClockSec = 24;
-      this.pushState();
+      const payload = {
+        isRunning: false,
+        isReset: true,
+        resetTime: 24
+      };
+      this.pushState(ActionType.SHOT_CLOCK, payload);
     },
     setShotClock(value) {
-      this.shotClockSec = value;
-      this.pushState();
+      const payload = { isReset: true, resetTime: value };
+      this.pushState(ActionType.SHOT_CLOCK, payload);
     },
     adjustShotClock(delta) {
-      this.shotClockSec = Math.max(0, this.shotClockSec + delta);
-      this.pushState();
+      const payload = { adjust: delta };
+      this.pushState(ActionType.SHOT_CLOCK, payload);
     },
 
     openTimeModal() {
@@ -687,9 +598,12 @@ export default {
       const safeSs = Math.min(59, Math.max(0, ss));
       const total = Math.max(0, mm * 60 + safeSs);
 
-      this.gameClockSec = total;
+      const payload = {
+        isReset: true,
+        resetTime: total
+      };
+      this.pushState(ActionType.GAME_TIME, payload);
       this.closeTimeModal();
-      this.pushState();
     },
 
     formatMMSS(sec) {
