@@ -1,25 +1,59 @@
 package com.nincore.nincoreboardapi.domain;
 
+import lombok.*;
 
-import lombok.Builder;
-import lombok.Data;
-
+@Getter
 @Builder
-@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class GameState {
     private int quarter;
-    private String totalTime;
+    private int gameTime;
+    private boolean isGameRunning;
     private int shotClock;
-    private String homeName;
-    private String awayName;
+    private boolean isShotClockRunning;
+    private  String homeName;
     private int homeScore;
+    private int homeFoul;
+    private String awayName;
     private int awayScore;
-    private int teamFoul;
+    private int awayFoul;
 
-    public void setHomeSetting(String payload) {
-        // 여기서 이제 json 파싱해서 데이터 저장하기
+    public void setGameTime(GameTime payload) {
+        this.isGameRunning = payload.isRunning();
+
+        if (payload.isReset()) {
+            this.gameTime = payload.getResetTime();
+        } else if (payload.getAdjust() != 0) {
+            this.gameTime = payload.getAdjust();
+        }
     }
 
-    public void setAwaySetting(String payload) {
+    public void setShotClock(ShotClock payload) {
+        this.isShotClockRunning = payload.isRunning();
+
+        if (payload.isReset) {
+            this.shotClock = 24;
+        } else if (payload.isSetHalf()) {
+            this.shotClock = 14;
+        } else if (payload.getAdjust() != 0) {
+            this.shotClock += payload.getAdjust();
+        }
+    }
+
+    public void setQuarter(int quarter) {
+        this.quarter = quarter;
+    }
+
+    public void setHome(HomeState payload) {
+        this.homeName = payload.getHomeName();
+        this.homeScore  = payload.getHomeScore();
+        this.homeFoul = payload.getHomeFoul();
+    }
+
+    public void setAway(AwayState payload) {
+        this.awayName = payload.getAwayName();
+        this.awayScore = payload.getAwayScore();
+        this.awayFoul = payload.getAwayFoul();
     }
 }

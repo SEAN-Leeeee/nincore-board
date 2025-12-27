@@ -3,10 +3,12 @@ package com.nincore.nincoreboardapi.domain;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-
 @Getter
 @NoArgsConstructor
-public class Action {
-    private String type;
-    private String payload;
+public class ShotClock {
+    int shotClock;
+    boolean isRunning;
+    boolean isReset;
+    boolean isSetHalf;
+    int adjust;
 }
