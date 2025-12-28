@@ -1,5 +1,6 @@
 package com.nincore.nincoreboardapi.domain;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.*;
 
 @Getter
@@ -7,7 +8,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GameState {
-    private int quarter;
+    private int quarter = 1;
     private int gameTime;
     private boolean isGameRunning;
     private int shotClock;
@@ -27,49 +28,55 @@ public class GameState {
         this.shotClock -= i;
     }
 
-    public void setGameTime(GameTime payload) {
-        this.isGameRunning = payload.isRunning();
+    public void setGameTime(JsonNode payload) {
+        this.isGameRunning = payload.get("isRunning").asBoolean();
 
-        if (payload.isReset()) {
-            this.gameTime = payload.getResetTime();
-        } else if (payload.getAdjust() != 0) {
-            this.gameTime = payload.getAdjust();
+        if (payload.get("isReset").asBoolean()) {
+            this.gameTime = payload.get("resetTime").asInt();
+        } else if (payload.get("adjust").asInt() != 0) {
+            this.gameTime = payload.get("adjust").asInt();
         }
     }
 
-    public void setShotClock(ShotClock payload) {
-        this.isShotClockRunning = payload.isRunning();
+    public void setShotClock(JsonNode payload) {
+        this.isShotClockRunning = payload.get("isRunning").asBoolean();
 
-        if (payload.isReset) {
+        if (payload.get("isReset").asBoolean()) {
             this.shotClock = 24;
-        } else if (payload.isSetHalf()) {
+        } else if (payload.get("isSetHalf").asBoolean()) {
             this.shotClock = 14;
-        } else if (payload.getAdjust() != 0) {
-            this.shotClock += payload.getAdjust();
+        } else if (payload.get("adjust").asInt() != 0) {
+            this.shotClock += payload.get("adjust").asInt();
         }
     }
 
-    public void setQuarter(int quarter) {
-        this.quarter = quarter;
+    public void setQuarter(JsonNode payload) {
+        this.quarter = payload.get("quarter").asInt();
     }
 
-    public void setHome(HomeState payload) {
-        this.homeName = payload.getHomeName();
-        this.homeScore  = payload.getHomeScore();
-        this.homeFoul = payload.getHomeFoul();
+    public void setHomeName(JsonNode payload) {
+        this.homeName = payload.get("homeName").asText();
     }
-
-    public void setAway(AwayState payload) {
-        this.awayName = payload.getAwayName();
-        this.awayScore = payload.getAwayScore();
-        this.awayFoul = payload.getAwayFoul();
+    public void setHomeScore(JsonNode payload) {
+        this.homeScore  = payload.get("homeScore").asInt();
     }
-
+    public void setHomeFoul(JsonNode payload) {
+        this.homeFoul = payload.get("homeFoul").asInt();
+    }
+    public void setAwayName(JsonNode payload) {
+        this.awayName = payload.get("awayName").asText();
+    }
+    public void setAwayScore(JsonNode payload) {
+        this.awayScore = payload.get("awayScore").asInt();
+    }
+    public void setAwayFoul(JsonNode payload) {
+        this.awayFoul = payload.get("awayFoul").asInt();
+    }
     public void stopGameRunning(boolean state) {
         this.isGameRunning = state;
     }
 
     public void stopShotClock(boolean state) {
-        this.isShotClockRunning = false;
+        this.isShotClockRunning = state;
     }
 }
