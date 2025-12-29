@@ -23,7 +23,9 @@ public class GameState {
     private int awayFoul;
 
     public void minusGameTime(int i) {
-        this.gameTime -= i;
+        log.debug("@@@3333" + this.gameTime);
+        this.gameTime = i;
+        log.debug("@@@444" + this.gameTime);
     }
 
     public void minusShotClock(int i) {
@@ -32,7 +34,6 @@ public class GameState {
 
     public void setGameTime(JsonNode payload) {
         this.isGameRunning = payload.get("isRunning").asBoolean();
-
         if (payload.get("isReset").asBoolean()) {
             this.gameTime = payload.get("resetTime").asInt();
         } else if (payload.get("adjust").asInt() != 0) {
@@ -80,5 +81,13 @@ public class GameState {
 
     public void stopShotClock(boolean state) {
         this.isShotClockRunning = state;
+    }
+
+    public void toggleGameTime(JsonNode payload) {
+        this.isGameRunning = payload.get("isRunning").asBoolean();
+    }
+
+    public void toggleShotClock(JsonNode payload) {
+        this.isShotClockRunning = payload.get("isRunning").asBoolean();
     }
 }

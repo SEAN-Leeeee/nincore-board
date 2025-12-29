@@ -2,12 +2,14 @@ package com.nincore.nincoreboardapi.service;
 
 import com.nincore.nincoreboardapi.domain.GameState;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClockService {
     private final StateService stateService;
     private final SimpMessagingTemplate simpMessagingTemplate;
@@ -17,7 +19,9 @@ public class ClockService {
         GameState currentState = stateService.get();
 
         if (currentState.isGameRunning()) {
+            log.debug("@@@@111");
             if(currentState.getGameTime() > 0) {
+                log.debug("@@@@222");
                 currentState.minusGameTime(currentState.getGameTime() - 1);
             } else {
                 currentState.stopGameRunning(false);
@@ -31,7 +35,7 @@ public class ClockService {
                 currentState.stopShotClock(false);
             }
         }
-
+        log.debug("@@@3333" + currentState.getGameTime());
         simpMessagingTemplate.convertAndSend("/subscribe/state", currentState);
     }
 }

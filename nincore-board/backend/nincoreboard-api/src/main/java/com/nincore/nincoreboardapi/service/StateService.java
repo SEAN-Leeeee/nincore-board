@@ -19,6 +19,7 @@ public class StateService {
             GameState.builder()
                     .homeName("HOME")
                     .awayName("AWAY")
+                    .quarter(1)
                     .homeScore(0)
                     .awayScore(0)
                     .homeFoul(0)
@@ -55,6 +56,10 @@ public class StateService {
             case "AWAY_NAME" -> s.setAwayName(cmd.getPayload());
             case "AWAY_SCORE" -> s.setAwayScore(cmd.getPayload());
             case "AWAY_FOUL" -> s.setAwayFoul(cmd.getPayload());
+
+            case "TOGGLE_GAME_TIME" -> s.toggleGameTime(cmd.getPayload());
+            case "TOGGLE_SHOT_CLOCK" -> s.toggleShotClock(cmd.getPayload());
+
 
             case "GAME_TIME_SETTING" -> s.setGameTime(cmd.getPayload());
             case "SHOT_CLOCK_SETTING" -> s.setShotClock(cmd.getPayload());
