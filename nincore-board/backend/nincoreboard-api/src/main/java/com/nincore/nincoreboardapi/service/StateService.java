@@ -34,7 +34,6 @@ public class StateService {
     }
 
     public GameState apply(Action cmd) {
-        System.out.println("CMD = " + cmd.getType() + ", payload=" + cmd.getPayload());
         GameState s = state.get();
 
         state.set(s);
@@ -44,9 +43,11 @@ public class StateService {
             messagingTemplate.convertAndSend("/subscribe/state", s);
             return s;
         }
+        log.debug("CMD = " + cmd.getType() + ", payload=" + cmd.getPayload());
 
 
         switch (cmd.getType()) {
+
             case "HOME_NAME" -> s.setHomeName(cmd.getPayload());
             case "HOME_SCORE" -> s.setHomeScore(cmd.getPayload());
             case "HOME_FOUL" -> s.setHomeFoul(cmd.getPayload());

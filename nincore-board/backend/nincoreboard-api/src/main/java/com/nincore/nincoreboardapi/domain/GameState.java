@@ -2,13 +2,15 @@ package com.nincore.nincoreboardapi.domain;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Slf4j
 public class GameState {
-    private int quarter = 1;
+    private int quarter;
     private int gameTime;
     private boolean isGameRunning;
     private int shotClock;
@@ -58,19 +60,19 @@ public class GameState {
         this.homeName = payload.get("homeName").asText();
     }
     public void setHomeScore(JsonNode payload) {
-        this.homeScore  = payload.get("homeScore").asInt();
+        this.homeScore  += payload.get("score").asInt();
     }
     public void setHomeFoul(JsonNode payload) {
-        this.homeFoul = payload.get("homeFoul").asInt();
+        this.homeFoul += payload.get("foul").asInt();
     }
     public void setAwayName(JsonNode payload) {
         this.awayName = payload.get("awayName").asText();
     }
     public void setAwayScore(JsonNode payload) {
-        this.awayScore = payload.get("awayScore").asInt();
+        this.awayScore += payload.get("score").asInt();
     }
     public void setAwayFoul(JsonNode payload) {
-        this.awayFoul = payload.get("awayFoul").asInt();
+        this.awayFoul += payload.get("foul").asInt();
     }
     public void stopGameRunning(boolean state) {
         this.isGameRunning = state;
