@@ -23,13 +23,10 @@ public class GameState {
     private int awayFoul;
 
     public void minusGameTime(int i) {
-        log.debug("@@@3333" + this.gameTime);
         this.gameTime = i;
-        log.debug("@@@444" + this.gameTime);
     }
-
     public void minusShotClock(int i) {
-        this.shotClock -= i;
+        this.shotClock = i;
     }
 
     public void setGameTime(JsonNode payload) {

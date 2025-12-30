@@ -135,10 +135,9 @@ export default {
       if (!s) return;
 
       if (typeof s.quarter === "number") this.quarter = s.quarter;
-      if (typeof s.gameClockSec === "number") this.gameClockSec = s.gameClockSec;
-      if (typeof s.shotClockSec === "number") this.shotClockSec = s.shotClockSec;
+      if (typeof s.gameTime === "number") this.gameClockSec = s.gameTime;
+      if (typeof s.shotClock === "number") this.shotClockSec = s.shotClock;
 
-      // The state `s` is flat, not nested.
       this.homeTeamName = s.homeName ?? this.homeTeamName;
       this.homeScore = Number(s.homeScore ?? this.homeScore);
       this.homeTeamFouls = Number(s.homeFoul ?? this.homeTeamFouls);

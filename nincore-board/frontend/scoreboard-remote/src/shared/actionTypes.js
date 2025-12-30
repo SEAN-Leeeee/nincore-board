@@ -1,7 +1,7 @@
 export const ActionType = Object.freeze({
     // Clock
-    GAME_TIME: "GAME_TIME",
-    SHOT_CLOCK: "SHOT_CLOCK",
+    TOGGLE_GAME_TIME: "TOGGLE_GAME_TIME",
+    TOGGLE_SHOT_CLOCK: "TOGGLE_SHOT_CLOCK",
 
     // Game
     QUARTER: "QUARTER",

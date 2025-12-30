@@ -662,3 +662,35 @@ body {
 .rc-team {
     overflow: hidden !important;
 }
+/* RemoteControl: 시간 버튼 기본 스타일 때문에 시간이 안 보이는 문제 방지 */
+.rc-time-click{
+    appearance:none;
+    -webkit-appearance:none;
+    border:0;
+    background:transparent;
+    padding:0;
+    margin:0;
+    font:inherit;
+    color:inherit;
+    line-height:1;
+    cursor:pointer;
+
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+
+    width:100%;
+    min-width:0;
+}
+
+.rc-time-value{
+    display:inline-block;
+    font-size:1.25em;
+    font-weight:800;
+    line-height:1;
+    white-space:nowrap;
+}
+
+/* 작은 화면에서 잘림 방지 */
+.rc-time-cell{ min-width:0; }
+.rc-time-cell--center{ overflow:visible; }
