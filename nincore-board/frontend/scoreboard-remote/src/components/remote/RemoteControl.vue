@@ -689,7 +689,7 @@ export default {
         Home: { homeName: "Home", homeScore: 0, homeFoul: 0 },
         Away: { awayName: "Away", awayScore: 0, awayFoul: 0 },
       },
-
+      strictGameTime: 7* 60,
       gameClockSec: 7 * 60,
       shotClockSec: 24,
       isGameRunning: false,
@@ -740,11 +740,10 @@ export default {
   mounted() {
     connectWS((s) => {
       if (!s) return;
+      if (typeof s.quarter === "number") this.quarter = s.quarter;
+      if (typeof s.gameTime === "number") this.gameClockSec = s.gameTime;
+      if (typeof s.shotClock === "number") this.shotClockSec = s.shotClock;
 
-      // Always update state from server
-      if (s.quarter !== undefined) this.quarter = s.quarter;
-      if (s.gameClockSec !== undefined) this.gameClockSec = s.gameClockSec;
-      if (s.shotClockSec !== undefined) this.shotClockSec = s.shotClockSec;
       if (s.isGameRunning !== undefined) this.isGameRunning = s.isGameRunning;
       if (s.isShotRunning !== undefined) this.isShotRunning = s.isShotRunning;
 
@@ -929,13 +928,14 @@ export default {
       const payload = {
         isRunning: false,
         isReset: true,
-        resetTime: 7 * 60
+        resetTime: this.strictGameTime,
       };
-      this.pushState(ActionType.GAME_TIME, payload);
+      this.pushState(ActionType.SETTING_GAME_TIME, payload);
     },
+
     adjustGameClock(delta) {
       const payload = { adjust: delta };
-      this.pushState(ActionType.GAME_TIME, payload);
+      this.pushState(ActionType.SETTING_GAME_TIME, payload);
     },
 
     resetShotClock() {
@@ -944,21 +944,21 @@ export default {
         isReset: true,
         resetTime: 24
       };
-      this.pushState(ActionType.SHOT_CLOCK, payload);
+      this.pushState(ActionType.SETTING_SHOT_CLOCK, payload);
     },
     setShotClock(value) {
       const payload = { isReset: true, resetTime: value };
-      this.pushState(ActionType.SHOT_CLOCK, payload);
+      this.pushState(ActionType.SETTING_SHOT_CLOCK, payload);
     },
     adjustShotClock(delta) {
       const payload = { adjust: delta };
-      this.pushState(ActionType.SHOT_CLOCK, payload);
+      this.pushState(ActionType.SETTING_SHOT_CLOCK, payload);
     },
 
     openTimeModal() {
       this.timeModal.open = true;
-      const mm = Math.floor(this.gameClockSec / 60);
-      const ss = this.gameClockSec % 60;
+      const mm = Math.floor(this.strictGameTime / 60);
+      const ss = this.strictGameTime % 60;
       this.timeModal.mm = String(mm);
       this.timeModal.ss = String(ss).padStart(2, "0");
     },
@@ -969,7 +969,7 @@ export default {
       const mm = parseInt(this.timeModal.mm, 10);
       const ss = parseInt(this.timeModal.ss, 10);
       if (Number.isNaN(mm) || Number.isNaN(ss)) return;
-
+      this.strictGameTime = mm * 60 + ss;
       const safeSs = Math.min(59, Math.max(0, ss));
       const total = Math.max(0, mm * 60 + safeSs);
 
@@ -977,7 +977,7 @@ export default {
         isReset: true,
         resetTime: total
       };
-      this.pushState(ActionType.GAME_TIME, payload);
+      this.pushState(ActionType.SETTING_GAME_TIME, payload);
       this.closeTimeModal();
     },
 
