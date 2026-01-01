@@ -686,7 +686,7 @@ body {
 .rc-time-value{
     display:inline-block;
     font-size:1.25em;
-    font-weight:800;
+    font-weight: 800;
     line-height:1;
     white-space:nowrap;
 }

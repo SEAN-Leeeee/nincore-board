@@ -34,7 +34,7 @@ public class GameState {
         if (payload.get("isReset").asBoolean()) {
             this.gameTime = payload.get("resetTime").asInt();
         } else if (payload.get("adjust").asInt() != 0) {
-            this.gameTime = payload.get("adjust").asInt();
+            this.gameTime += payload.get("adjust").asInt();
         }
     }
 
@@ -86,5 +86,17 @@ public class GameState {
 
     public void toggleShotClock(JsonNode payload) {
         this.isShotClockRunning = payload.get("isRunning").asBoolean();
+    }
+
+    public void resetHome(JsonNode payload) {
+        this.homeName = payload.get("homeName").asText();
+        this.homeScore =  payload.get("homeScore").asInt();
+        this.homeFoul =  payload.get("homeFoul").asInt();
+    }
+
+    public void resetAway(JsonNode payload) {
+        this.awayName =  payload.get("awayName").asText();
+        this.awayScore = payload.get("awayScore").asInt();
+        this.awayFoul = payload.get("AwayFoul").asInt();
     }
 }

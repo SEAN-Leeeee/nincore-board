@@ -1,146 +1,206 @@
+/* Roster Modal Styles */
 .rm-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    display: grid;
-    place-items: center;
-    z-index: 9999;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: grid;
+  place-items: center;
+  z-index: 99999;
 }
 
 .rm-panel {
-    width: min(760px, calc(100vw - 20px));
-    height: min(86vh, 720px);
-    background: rgba(18, 26, 38, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 18px;
-    overflow: hidden;
-    display: grid;
-    grid-template-rows: auto auto 1fr auto;
-}
-
-.rm-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 14px 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.rm-title {
-    font-size: 16px;
-    font-weight: 900;
-    color: #e8eef9;
-}
-
-.rm-close {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: transparent;
-    color: #e8eef9;
-    padding: 8px 10px;
-    border-radius: 10px;
-    font-weight: 900;
-    cursor: pointer;
-}
-
-.rm-desc {
-    padding: 10px 14px;
-    font-size: 12px;
-    color: rgba(232, 238, 249, 0.75);
-}
-
-.rm-table {
-    padding: 0 12px 12px;
-    min-height: 0;
-    overflow: hidden;
+  width: min(92vw, 560px);
+  height: min(86vh, 720px);
+  background: rgba(18, 26, 38, 0.96);
+  color: #eef3ff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
 }
 
 .rm-head {
-    display: grid;
-    grid-template-columns: 70px 120px 1fr 52px;
-    gap: 8px;
-    padding: 10px 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    color: rgba(232, 238, 249, 0.7);
-    font-size: 12px;
-    font-weight: 900;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.rm-body {
-    height: 100%;
-    overflow: auto;
-    padding: 10px 0 0;
+.rm-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #eef3ff;
+}
+
+.rm-close {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: #eef3ff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.rm-desc {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: rgba(238, 243, 255, 0.65);
+}
+
+.rm-table {
+  padding: 0 12px 12px;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* 제목 행들 더 오른쪽 + 오른쪽 정렬 */
+.rm-thead {
+  display: grid;
+  grid-template-columns: 72px 2fr 5fr 44px;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(238, 243, 255, 0.65);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  align-items: center;
+}
+
+/* Removed .rm-thead > .rm-th rule as per instructions */
+
+.rm-th {
+  min-width: 0;
+}
+
+.rm-th--right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  text-align: right;
+}
+
+.rm-th--center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* select-all header cell should align with the row checkbox cell */
+.rm-th--select {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .rm-row {
-    display: grid;
-    grid-template-columns: 70px 120px 1fr 52px;
-    gap: 8px;
-    padding: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 14px;
-    margin: 8px 0;
-    background: rgba(0, 0, 0, 0.12);
-    align-items: center;
+  display: grid;
+  grid-template-columns: 72px 2fr 5fr 44px;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  align-items: center;
 }
 
-.rm-col {
-    min-width: 0;
+.rm-cell {
+  min-width: 0;
 }
 
-.rm-input {
-    width: 100%;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
-    color: #e8eef9;
-    border-radius: 12px;
-    padding: 10px 10px;
-    font-size: 13px;
-    outline: none;
+.rm-cell--center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.rm-input--no {
-    width: 100%;
+.rm-cell--right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
+.rm-no,
+.rm-name {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #eef3ff;
+  border-radius: 10px;
+  padding: 10px 10px;
+  outline: none;
+  font-weight: 800;
+  font-size: 12px;
+  text-align: center;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+/* X 버튼: 박스 제거, X만 */
 .rm-x {
-    width: 44px;
-    height: 40px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.04);
-    color: #e8eef9;
-    font-size: 20px;
-    font-weight: 900;
-    cursor: pointer;
+  border: 0;
+  background: transparent;
+  color: #eef3ff;
+  width: auto;
+  height: auto;
+  padding: 0;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  line-height: 1;
 }
 
 .rm-footer {
-    padding: 12px 14px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rm-footer__left {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .rm-btn {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.06);
-    color: #e8eef9;
-    padding: 10px 12px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 900;
-    cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #eef3ff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 900;
+  cursor: pointer;
+  font-size: 12px;
 }
 
 .rm-btn--ghost {
-    background: transparent;
+  background: transparent;
 }
 
 .rm-btn--primary {
-    background: rgba(79, 124, 255, 0.22);
-    border-color: rgba(79, 124, 255, 0.35);
+  background: rgba(79, 124, 255, 0.18);
+  border-color: rgba(79, 124, 255, 0.3);
+}
+
+.rm-selectall {
+  justify-content: flex-end;
+}
+
+.rm-selectall__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(238, 243, 255, 0.65);
+  user-select: none;
+}
+
+.rm-selectall__label input[type="checkbox"]:disabled {
+  opacity: 0.5;
 }

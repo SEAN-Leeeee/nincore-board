@@ -2,7 +2,7 @@
   <div class="rm-overlay" @click.self="$emit('close')">
     <div class="rm-panel">
       <div class="rm-head">
-        <div class="rm-title">{{ teamName }} 선수 변경</div>
+        <div class="rm-title"> 선수 변경</div>
         <button class="rm-close" @click="$emit('close')">닫기</button>
       </div>
 
@@ -10,10 +10,19 @@
 
       <div class="rm-table">
         <div class="rm-thead">
-          <div>선택</div>
-          <div>등번호</div>
-          <div>이름</div>
-          <div></div>
+          <div class="rm-th rm-th--center rm-th--select">
+            <label class="rm-selectall__label" aria-label="전체선택">
+              <input
+                type="checkbox"
+                :checked="isAllSelected"
+                :disabled="!canSelectAll"
+                @change="toggleSelectAll"
+              />
+            </label>
+          </div>
+          <div class="rm-th rm-th--center">등번호</div>
+          <div class="rm-th rm-th--center">이름</div>
+          <div class="rm-th"></div>
         </div>
 
         <div class="rm-row" v-for="p in localPlayers" :key="p.id">
@@ -41,7 +50,7 @@
       </div>
 
       <div class="rm-footer">
-        <button class="rm-btn rm-btn--ghost" @click="addRow">추가</button>
+        <button class="rm-btn rm-btn--ghost" @click="addRow">인원추가 +</button>
         <button class="rm-btn rm-btn--primary" @click="save">저장</button>
       </div>
     </div>
@@ -53,7 +62,6 @@ export default {
   name: "RosterModal",
   props: {
     team: { type: String, required: true },
-    teamName: { type: String, required: true },
     players: { type: Array, required: true }
   },
   data() {
@@ -65,6 +73,12 @@ export default {
   computed: {
     selectedCount() {
       return this.localPlayers.filter(p => p.selected).length;
+    },
+    canSelectAll() {
+      return this.localPlayers.length === 5;
+    },
+    isAllSelected() {
+      return this.localPlayers.length > 0 && this.selectedCount === this.localPlayers.length;
     }
   },
   methods: {
@@ -74,6 +88,14 @@ export default {
 
       if (!p.selected && this.selectedCount >= 5) return;
       p.selected = !p.selected;
+    },
+
+    toggleSelectAll(e) {
+      if (!this.canSelectAll) return;
+      const checked = !!(e && e.target && e.target.checked);
+      this.localPlayers.forEach(p => {
+        p.selected = checked;
+      });
     },
 
     addRow() {
@@ -90,7 +112,6 @@ export default {
     },
 
     save() {
-      // ✅ 검증: 선택된 선수들 번호는 반드시 입력 + 중복 금지
       const selected = this.localPlayers.filter(p => p.selected);
 
       for (const p of selected) {
@@ -113,136 +134,4 @@ export default {
 };
 </script>
 
-<style scoped>
-.rm-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: rgba(0, 0, 0, 0.72);
-  display: grid;
-  place-items: center;
-}
-
-.rm-panel {
-  width: min(92vw, 560px);
-  max-height: 86vh;
-  overflow: hidden;
-  background: #0e1420;
-  color: #eef3ff;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
-}
-
-.rm-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.rm-title {
-  font-weight: 900;
-  font-size: 14px;
-}
-
-.rm-close {
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: transparent;
-  color: #eef3ff;
-  border-radius: 10px;
-  padding: 8px 10px;
-  cursor: pointer;
-  font-weight: 900;
-}
-
-.rm-desc {
-  padding: 10px 12px;
-  font-size: 12px;
-  color: rgba(238, 243, 255, 0.65);
-}
-
-.rm-table {
-  padding: 0 12px 12px;
-  overflow: auto;
-}
-
-.rm-thead {
-  display: grid;
-  grid-template-columns: 52px 90px 1fr 44px;
-  gap: 8px;
-  padding: 10px 0;
-  font-size: 11px;
-  font-weight: 900;
-  color: rgba(238, 243, 255, 0.65);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.rm-row {
-  display: grid;
-  grid-template-columns: 52px 90px 1fr 44px;
-  gap: 8px;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  align-items: center;
-}
-
-.rm-cell--center {
-  display: flex;
-  justify-content: center;
-}
-
-.rm-no,
-.rm-name {
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: #eef3ff;
-  border-radius: 10px;
-  padding: 10px 10px;
-  outline: none;
-  font-weight: 800;
-  font-size: 12px;
-}
-
-.rm-x {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: transparent;
-  color: #eef3ff;
-  font-size: 18px;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.rm-footer {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.rm-btn {
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: #eef3ff;
-  border-radius: 12px;
-  padding: 10px 12px;
-  font-weight: 900;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.rm-btn--ghost {
-  background: transparent;
-}
-
-.rm-btn--primary {
-  background: rgba(79, 124, 255, 0.18);
-  border-color: rgba(79, 124, 255, 0.3);
-}
-</style>
+<style scoped src="./roster-modal.css"></style>

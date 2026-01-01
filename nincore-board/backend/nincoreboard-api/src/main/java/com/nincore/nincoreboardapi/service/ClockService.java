@@ -19,9 +19,7 @@ public class ClockService {
         GameState currentState = stateService.get();
 
         if (currentState.isGameRunning()) {
-            log.debug("@@@@111");
             if(currentState.getGameTime() > 0) {
-                log.debug("@@@@222");
                 currentState.minusGameTime(currentState.getGameTime() - 1);
             } else {
                 currentState.stopGameRunning(false);
@@ -35,7 +33,6 @@ public class ClockService {
                 currentState.stopShotClock(false);
             }
         }
-        log.debug("@@@3333" + currentState.getGameTime());
         simpMessagingTemplate.convertAndSend("/subscribe/state", currentState);
     }
 }

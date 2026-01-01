@@ -61,8 +61,11 @@ public class StateService {
             case "TOGGLE_SHOT_CLOCK" -> s.toggleShotClock(cmd.getPayload());
 
 
-            case "GAME_TIME_SETTING" -> s.setGameTime(cmd.getPayload());
-            case "SHOT_CLOCK_SETTING" -> s.setShotClock(cmd.getPayload());
+            case "SETTING_GAME_TIME" -> s.setGameTime(cmd.getPayload());
+            case "SETTING_SHOT_CLOCK" -> s.setShotClock(cmd.getPayload());
+
+            case "RESET_HOME" -> s.resetHome(cmd.getPayload());
+            case "RESET_AWAY" -> s.resetAway(cmd.getPayload());
             default -> log.warn("처리되지 않은 ActionType 입니다: {} ", cmd.getType());
         }
 
