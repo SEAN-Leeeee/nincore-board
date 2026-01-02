@@ -12,13 +12,13 @@ export const ActionType = Object.freeze({
     HOME_NAME: "HOME_NAME",
     HOME_SCORE: "HOME_SCORE",
     HOME_FOUL: "HOME_FOUL",
-
+    HOME_PLAYER: "HOME_PLAYER",
     // Away Team
     RESET_AWAY: "RESET_AWAY",
     AWAY_NAME: "AWAY_NAME",
     AWAY_SCORE: "AWAY_SCORE",
     AWAY_FOUL: "AWAY_FOUL",
-
+    AWAY_PLAYER: "AWAY_PLAYER",
     // Full state override (for things like roster changes for now)
     STATE_UPDATE: "STATE_UPDATE",
 });

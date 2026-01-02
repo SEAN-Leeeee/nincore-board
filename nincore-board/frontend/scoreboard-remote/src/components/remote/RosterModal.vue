@@ -36,11 +36,19 @@
           </div>
 
           <div class="rm-cell">
-            <input class="rm-no" v-model="p.no" placeholder="번호" inputmode="numeric" />
+            <input
+                class="rm-no"
+                v-model="p.no"
+                placeholder="번호"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                maxlength="2"
+                @input="onNoInput(p)"
+            />
           </div>
 
           <div class="rm-cell">
-            <input class="rm-name" v-model="p.name" placeholder="이름" />
+            <input class="rm-name" v-model="p.name" maxlength="3" @input="onNameInput(p)" placeholder="이름" />
           </div>
 
           <div class="rm-cell rm-cell--center">
@@ -129,7 +137,20 @@ export default {
       }
 
       this.$emit("save", { team: this.team, players: this.localPlayers });
-    }
+    },
+
+    onNoInput(p) {
+      const raw = String(p.no ?? "");
+      // 숫자만 남기고, 최대 2자리
+      p.no = raw.replace(/\D/g, "").slice(0, 2);
+    },
+
+    onNameInput(p) {
+      const raw = String(p.name ?? "");
+      // 특수문자/공백/숫자 제거, 한글/영문만 허용, 최대 4글자
+      p.name = raw.replace(/[^a-zA-Z가-힣]/g, "").slice(0, 4);
+    },
+
   }
 };
 </script>

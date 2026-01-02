@@ -37,14 +37,14 @@
         </div>
 
         <div class="sb-shotrow">
-          <div class="sb-tfoul sb-tfoul--left">T-FOUL {{ homeTeamFouls }}</div>
+          <div class="sb-tfoul sb-tfoul--left">T-FOUL <br>&nbsp   {{ homeTeamFouls }}</div>
 
           <div class="sb-shot">
-            <div class="sb-shot-label">샷클락</div>
+            <div class="sb-shot-label"></div>
             <div class="sb-shot-value">{{ shotClockText }}</div>
           </div>
 
-          <div class="sb-tfoul sb-tfoul--right">T-FOUL {{ awayTeamFouls }}</div>
+          <div class="sb-tfoul sb-tfoul--right">T-FOUL <br>&nbsp    {{ awayTeamFouls }}</div>
         </div>
       </section>
 
@@ -146,9 +146,9 @@ export default {
       this.awayScore = Number(s.awayScore ?? this.awayScore);
       this.awayTeamFouls = Number(s.awayFoul ?? this.awayTeamFouls);
 
-      const players = s.players || {};
-      const homePlayers = players.Home || players.A || [];
-      const awayPlayers = players.Away || players.B || [];
+
+      const homePlayers = s.homePlayers
+      const awayPlayers = s.awayPlayers;
 
       const toRow = (p) => ({
         no: p.no ?? "",
@@ -164,7 +164,7 @@ export default {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const s = Math.min(vw / this.baseW, vh / this.baseH);
-      this.scale = Math.max(0.2, s);
+      this.scale = Math.max(0.2, s * 1.1);
     },
     mmss(sec) {
       const s = Math.max(0, Number(sec) || 0);

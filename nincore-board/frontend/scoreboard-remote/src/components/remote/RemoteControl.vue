@@ -107,15 +107,15 @@
                   <div class="rc-mini-title">점수</div>
                   <div class="rc-score-2rows">
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection(1)" :disabled="activePlayers.Home.length === 0">+1</button>
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection(2)" :disabled="activePlayers.Home.length === 0">+2</button>
+                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Home', 1)" :disabled="activePlayers.Home.length === 0">+1</button>
+                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Home', 2)" :disabled="activePlayers.Home.length === 0">+2</button>
                     </div>
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection(3)" :disabled="activePlayers.Home.length === 0">+3</button>
+                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Home', 3)" :disabled="activePlayers.Home.length === 0">+3</button>
                       <button
                           class="rc-btn rc-btn--pill rc-btn--ghost"
-                          @click="undoLastScore"
-                          :disabled="!lastScoringPlayer"
+                          @click="startUndoSelection('Home')"
+                          :disabled="teams.Home.homeScore <= 0"
                       >
                         -1
                       </button>
@@ -126,10 +126,10 @@
                 <div>
                   <div class="rc-mini-title">파울</div>
                   <div class="rc-btn-row">
-                    <button class="rc-btn rc-btn--pill" @click="addTeamFoul('Home', 1)" :disabled="activePlayers.Home.length === 0">+1</button>
+                    <button class="rc-btn rc-btn--pill" @click="startFoulSelection('Home')" :disabled="activePlayers.Home.length === 0">+1</button>
                     <button
                         class="rc-btn rc-btn--pill rc-btn--ghost"
-                        @click="addTeamFoul('Home', -1)"
+                        @click="startUndoFoulSelection('Home')"
                         :disabled="teams.Home.homeFoul <= 0"
                     >
                       -1
@@ -160,7 +160,14 @@
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.points }}</div>
-                  <button class="rc-plus" :class="{ 'blinking-effect': isPlayerSelectMode }" @click="confirmPlayerScore('Home', p.id)" :disabled="!isPlayerSelectMode">득점</button>
+                  <button
+                      class="rc-plus"
+                      :class="{ 'blinking-effect': playerSelectModeTeam === 'Home' || (undoSelectModeTeam === 'Home' && p.points > 0) }"
+                      @click="undoSelectModeTeam === 'Home' ? confirmUndoScore('Home', p.id) : confirmPlayerScore('Home', p.id)"
+                      :disabled="(playerSelectModeTeam !== 'Home' && undoSelectModeTeam !== 'Home') || (undoSelectModeTeam === 'Home' && (!p.points || p.points <= 0))"
+                  >
+                    {{ undoSelectModeTeam === 'Home' ? '득점취소' : '득점' }}
+                  </button>
                 </div>
 
                 <div class="rc-statcell">
@@ -180,7 +187,14 @@
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.fouls }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('Home', p.id, 'fouls', 1)">+1</button>
+                  <button
+                      class="rc-plus"
+                      :class="{ 'blinking-effect': foulSelectModeTeam === 'Home' || (undoFoulSelectModeTeam === 'Home' && p.fouls > 0) }"
+                      @click="foulSelectModeTeam === 'Home' ? confirmPlayerFoul('Home', p.id) : confirmUndoPlayerFoul('Home', p.id)"
+                      :disabled="(foulSelectModeTeam !== 'Home' && undoFoulSelectModeTeam !== 'Home') || (undoFoulSelectModeTeam === 'Home' && (!p.fouls || p.fouls <= 0))"
+                  >
+                    {{ undoFoulSelectModeTeam === 'Home' ? '파울취소' : '파울' }}
+                  </button>
                 </div>
               </div>
             </div>
@@ -216,15 +230,15 @@
                   <div class="rc-mini-title">점수</div>
                   <div class="rc-score-2rows">
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection(1)" :disabled="activePlayers.Away.length === 0">+1</button>
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection(2)" :disabled="activePlayers.Away.length === 0">+2</button>
+                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Away', 1)" :disabled="activePlayers.Away.length === 0">+1</button>
+                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Away', 2)" :disabled="activePlayers.Away.length === 0">+2</button>
                     </div>
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection(3)" :disabled="activePlayers.Away.length === 0">+3</button>
+                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Away', 3)" :disabled="activePlayers.Away.length === 0">+3</button>
                       <button
                           class="rc-btn rc-btn--pill rc-btn--ghost"
-                          @click="undoLastScore"
-                          :disabled="!lastScoringPlayer"
+                          @click="startUndoSelection('Away')"
+                          :disabled="teams.Away.awayScore <= 0"
                       >
                         -1
                       </button>
@@ -235,10 +249,10 @@
                 <div>
                   <div class="rc-mini-title">파울</div>
                   <div class="rc-btn-row">
-                    <button class="rc-btn rc-btn--pill" @click="addTeamFoul('Away', 1)" :disabled="activePlayers.Away.length === 0">+1</button>
+                    <button class="rc-btn rc-btn--pill" @click="startFoulSelection('Away')" :disabled="activePlayers.Away.length === 0">+1</button>
                     <button
                         class="rc-btn rc-btn--pill rc-btn--ghost"
-                        @click="addTeamFoul('Away', -1)"
+                        @click="startUndoFoulSelection('Away')"
                         :disabled="teams.Away.awayFoul <= 0"
                     >
                       -1
@@ -269,7 +283,14 @@
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.points }}</div>
-                  <button class="rc-plus" :class="{ 'blinking-effect': isPlayerSelectMode }" @click="confirmPlayerScore('Away', p.id)" :disabled="!isPlayerSelectMode">득점</button>
+                  <button
+                      class="rc-plus"
+                      :class="{ 'blinking-effect': playerSelectModeTeam === 'Away' || (undoSelectModeTeam === 'Away' && p.points > 0) }"
+                      @click="undoSelectModeTeam === 'Away' ? confirmUndoScore('Away', p.id) : confirmPlayerScore('Away', p.id)"
+                      :disabled="(playerSelectModeTeam !== 'Away' && undoSelectModeTeam !== 'Away') || (undoSelectModeTeam === 'Away' && (!p.points || p.points <= 0))"
+                  >
+                    {{ undoSelectModeTeam === 'Away' ? '득점취소' : '득점' }}
+                  </button>
                 </div>
 
                 <div class="rc-statcell">
@@ -289,7 +310,14 @@
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.fouls }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('Away', p.id, 'fouls', 1)">+1</button>
+                  <button
+                      class="rc-plus"
+                      :class="{ 'blinking-effect': foulSelectModeTeam === 'Away' || (undoFoulSelectModeTeam === 'Away' && p.fouls > 0) }"
+                      @click="foulSelectModeTeam === 'Away' ? confirmPlayerFoul('Away', p.id) : confirmUndoPlayerFoul('Away', p.id)"
+                      :disabled="(foulSelectModeTeam !== 'Away' && undoFoulSelectModeTeam !== 'Away') || (undoFoulSelectModeTeam === 'Away' && (!p.fouls || p.fouls <= 0))"
+                  >
+                    {{ undoFoulSelectModeTeam === 'Away' ? '파울취소' : '파울' }}
+                  </button>
                 </div>
               </div>
             </div>
@@ -366,9 +394,11 @@ export default {
       isGameRunning: false,
       isShotRunning: false,
 
-      isPlayerSelectMode: false,
+      playerSelectModeTeam: null,
+      undoSelectModeTeam: null,
+      foulSelectModeTeam: null,
+      undoFoulSelectModeTeam: null,
       pointsToAdd: 0,
-      lastScoringPlayer: null,
 
       rosterPlayers: {
         Home: [
@@ -532,7 +562,6 @@ export default {
       this.teams.Away.awayName = "Away";
       this.teams.Away.awayScore = 0;
       this.teams.Away.awayFoul = 0;
-      this.lastScoringPlayer = null;
 
       // Clear active players
       this.players.Home = [];
@@ -553,13 +582,13 @@ export default {
       this.resetGameClock();
       this.resetShotClock();
       this.pushState(ActionType.QUARTER, { isReset: true, quarter: 1 });
-      this.pushState(ActionType.HOME_SETTING, {
+      this.pushState(ActionType.RESET_HOME, {
         isReset: true,
         homeName: "Home",
         homeScore: 0,
         homeFoul: 0,
       });
-      this.pushState(ActionType.AWAY_SETTING, {
+      this.pushState(ActionType.RESET_AWAY, {
         isReset: true,
         awayName: "Away",
         awayScore: 0,
@@ -617,32 +646,13 @@ export default {
       this.saveStateToLocalStorage();
     },
 
-    startPlayerSelection(points) {
-      this.isPlayerSelectMode = true;
+    startPlayerSelection(teamKey, points) {
+      this.playerSelectModeTeam = teamKey;
       this.pointsToAdd = points;
     },
 
-    undoLastScore() {
-      if (!this.lastScoringPlayer) return;
-
-      const { teamKey, playerId } = this.lastScoringPlayer;
-      const list = this.players[teamKey];
-      const p = list.find(x => x.id === playerId);
-
-      if (p) {
-        // Update player stat locally
-        p.points = Math.max(0, (p.points || 0) - 1);
-
-        // Update team score (this now handles local state, saving, and pushing)
-        this.addTeamScore(teamKey, -1);
-
-        // Reset last score trackers
-        this.lastScoringPlayer = null;
-      }
-    },
-
     confirmPlayerScore(teamKey, playerId) {
-      if (!this.isPlayerSelectMode) return;
+      if (!this.playerSelectModeTeam || this.playerSelectModeTeam !== teamKey) return;
 
       const list = this.players[teamKey];
       const p = list.find(x => x.id === playerId);
@@ -650,18 +660,12 @@ export default {
 
       const points_to_add = this.pointsToAdd;
 
-      // Reset selection mode state
-      this.isPlayerSelectMode = false;
+      this.playerSelectModeTeam = null;
       this.pointsToAdd = 0;
 
-      // Update player stat locally
       p.points = Math.max(0, (p.points || 0) + points_to_add);
 
-      // Update team score (this also handles local state, saving, and pushing)
       this.addTeamScore(teamKey, points_to_add);
-
-      // Track this action for undo
-      this.lastScoringPlayer = { teamKey, playerId };
     },
 
     addPlayerStat(teamKey, playerId, field, delta) {
@@ -686,7 +690,6 @@ export default {
       const selected = players.filter(p => p.selected).slice(0, 5);
 
       this.players[team] = selected.map(p => ({
-        id: p.id,
         no: p.no,
         name: p.name,
         points: 0,
@@ -695,9 +698,11 @@ export default {
         steals: 0,
         fouls: 0,
       }));
-
       this.closeRoster();
       this.saveStateToLocalStorage();
+      const action = team === "Home" ? ActionType.HOME_PLAYER : ActionType.AWAY_PLAYER;
+
+      this.pushState(action, this.players[team]);
     },
 
     toggleGameClock() {
@@ -771,6 +776,61 @@ export default {
       const m = Math.floor(sec / 60);
       const s = sec % 60;
       return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    },
+
+    startUndoSelection(teamKey) {
+      this.undoSelectModeTeam = teamKey;
+    },
+
+    confirmUndoScore(teamKey, playerId) {
+      if (this.undoSelectModeTeam !== teamKey) return;
+
+      const list = this.players[teamKey];
+      const p = list.find(x => x.id === playerId);
+      if (!p) return;
+
+      if ((p.points || 0) > 0) {
+        p.points--;
+        this.addTeamScore(teamKey, -1);
+      }
+
+      this.undoSelectModeTeam = null;
+    },
+
+    startFoulSelection(teamKey) {
+      this.foulSelectModeTeam = teamKey;
+    },
+
+    confirmPlayerFoul(teamKey, playerId) {
+      if (this.foulSelectModeTeam !== teamKey) return;
+
+      const list = this.players[teamKey];
+      const p = list.find(x => x.id === playerId);
+      if (!p) return;
+
+      p.fouls = (p.fouls || 0) + 1;
+      this.addTeamFoul(teamKey, 1);
+
+      this.foulSelectModeTeam = null;
+    },
+
+    startUndoFoulSelection(teamKey) {
+      this.undoFoulSelectModeTeam = teamKey;
+    },
+
+    confirmUndoPlayerFoul(teamKey, playerId) {
+      if (this.undoFoulSelectModeTeam !== teamKey) return;
+
+      const list = this.players[teamKey];
+      const p = list.find(x => x.id === playerId);
+      if (!p) return;
+
+      if ((p.fouls || 0) > 0) {
+        p.fouls--;
+        this.addTeamFoul(teamKey, -1);
+      }
+
+      this.undoFoulSelectModeTeam = null;
     }
   }
 };
