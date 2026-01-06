@@ -5,7 +5,7 @@ let client = null;
 
 export function connectWS(onState) {
     client = new Client({
-        webSocketFactory: () => new SockJS("http://localhost:8080/ws-connect"),
+        webSocketFactory: () => new SockJS("/api/ws-connect"),
         reconnectDelay: 2000,
         onConnect: () => {
             client.subscribe("/subscribe/state", (msg) => {
