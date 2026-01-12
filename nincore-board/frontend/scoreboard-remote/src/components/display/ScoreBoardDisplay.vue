@@ -71,35 +71,28 @@
 
 <script>
 import "./scoreboard-display.css";
-import { connectWS } from "@/shared/wsClient";
+import { subscribeState, loadState } from "@/shared/stateChannel";
 
 export default {
   name: "ScoreBoardDisplay",
   data() {
     return {
       state: null,
-
       baseW: 1200,
       baseH: 600,
-
       homeTeamName: "HOME",
       awayTeamName: "AWAY",
-
       quarter: 1,
-
       gameClockSec: 7 * 60,
       shotClockSec: 24,
-
       homeScore: 0,
       awayScore: 0,
-
       homeTeamFouls: 0,
       awayTeamFouls: 0,
-
       homePlayers: [],
       awayPlayers: [],
-
-      scale: 1
+      scale: 1,
+      unsubscribe: null, // 구독 해제 함수 저장
     };
   },
   computed: {
@@ -122,13 +115,21 @@ export default {
     this.updateScale();
     window.addEventListener("resize", this.updateScale, { passive: true });
 
-    connectWS((s) => {
-      this.state = s;
-      this.applyStateToView(s);
-    });
+    // stateChannel을 구독하고, 상태 변경 시 applyStateToView를 호출합니다.
+    this.unsubscribe = subscribeState(this.applyStateToView);
+
+    // 초기 상태를 불러옵니다.
+    const initialState = loadState();
+    if (initialState) {
+      this.applyStateToView(initialState);
+    }
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.updateScale);
+    // 컴포넌트 파괴 시 구독을 해제합니다.
+    if (this.unsubscribe) {
+      this.unsubscribe();
+    }
   },
   methods: {
     applyStateToView(s) {

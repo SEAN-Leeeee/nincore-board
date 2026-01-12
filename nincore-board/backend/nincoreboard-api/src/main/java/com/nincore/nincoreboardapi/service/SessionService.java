@@ -3,8 +3,10 @@ package com.nincore.nincoreboardapi.service;
 import com.nincore.nincoreboardapi.domain.BoardSession;
 import com.nincore.nincoreboardapi.dto.LoginRequest;
 import com.nincore.nincoreboardapi.dto.LoginResponse;
+import com.nincore.nincoreboardapi.dto.LogoutRequest;
 import com.nincore.nincoreboardapi.repository.BoardSessionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,24 +14,38 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SessionService {
     private final BoardSessionRepository boardSessionRepository;
 
+    @Transactional
+    public void logout(LogoutRequest logoutRequest) {
+        Optional<BoardSession> sessionOptional = boardSessionRepository.findById(Long.parseLong(logoutRequest.getSessionId()));
+        if (sessionOptional.isPresent()) {
+            BoardSession session = sessionOptional.get();
+            session.delete(); // isDeleted를 true로 변경
+            boardSessionRepository.save(session); // 변경된 상태를 저장
+        }
+    }
+
     @Transactional(readOnly = true)
     public Optional<BoardSession> sessionExists(String ip, String password) {
-        return boardSessionRepository.findByIdAndPassword(ip, password);
+        return boardSessionRepository.findByIpAndPasswordAndIsDeletedFalse(ip, password);
     }
 
-
-
-    public void createSession(String ip, String password) {
-        BoardSession newSession = new BoardSession(ip, password);
-        boardSessionRepository.save(newSession);
-    }
-
+    @Transactional
     public LoginResponse login(LoginRequest loginRequest) {
-        Optional<BoardSession> session = sessionExists(loginRequest.getIp(), loginRequest.getPassword());
+        Optional<BoardSession> existSession = sessionExists(loginRequest.getIp(), loginRequest.getPassword());
 
-        session.isPresent();
+        if (existSession.isPresent()) {
+            log.info("기존 세션에 접속합니다.");
+            BoardSession session = existSession.get();
+            return new LoginResponse(session.getId(), false);
+        } else {
+            log.info("새로운 세션을 생성합니다.");
+            BoardSession newSession = new BoardSession(loginRequest.getIp(), loginRequest.getPassword());
+            BoardSession savedSession = boardSessionRepository.save(newSession);
+            return new LoginResponse(savedSession.getId(), true);
+        }
     }
 }

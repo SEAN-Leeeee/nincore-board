@@ -1,4 +1,4 @@
 package com.nincore.nincoreboardapi.dto;
 
-public record LoginResponse() {
+public record LoginResponse(Long sessionId, Boolean isNewSession) {
 }

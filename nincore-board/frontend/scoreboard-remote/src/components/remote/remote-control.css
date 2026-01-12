@@ -112,6 +112,12 @@ body,
     background: transparent;
 }
 
+.rc-btn--danger {
+    background: rgba(255, 77, 79, 0.2);
+    border-color: rgba(255, 77, 79, 0.35);
+    color: #ffced0;
+}
+
 .rc-btn--mini {
     padding: 6px 9px;
 }
