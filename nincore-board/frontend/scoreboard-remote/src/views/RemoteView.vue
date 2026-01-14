@@ -1,5 +1,5 @@
 <template>
-  <RemoteControl />
+  <RemoteControl ref="remoteControl" />
 </template>
 
 <script>
@@ -12,10 +12,14 @@ export default {
   components: { RemoteControl },
   mounted() {
     const router = this.$router;
+    const remoteControlInstance = this.$refs.remoteControl;
 
     const handleStateUpdate = (state) => {
-      // RemoteView는 상태를 받으면 stateChannel에 발행만 합니다.
-      // 실제 UI 업데이트는 RemoteControl 컴포넌트가 담당합니다.
+      // 1. 현재 탭의 UI를 직접 업데이트하기 위해 자식 컴포넌트의 메서드를 호출합니다.
+      if (remoteControlInstance) {
+        remoteControlInstance.applyStateToView(state);
+      }
+      // 2. 다른 탭(디스플레이)에 상태를 전파합니다.
       publishState(state);
     };
 
@@ -30,7 +34,7 @@ export default {
       router.push({ name: "Login" });
       return;
     }
-    connectWS(sessionId, handleStateUpdate, handleSessionEnd);
+    connectWS(sessionId, handleStateUpdate.bind(this), handleSessionEnd);
   },
   beforeDestroy() {
     disconnectWS();

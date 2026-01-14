@@ -36,10 +36,9 @@ export function connectWS(currentSessionId, onState, onSessionEnd) {
             // 상태 업데이트를 받으면,
             client.subscribe("/subscribe/state", (msg) => {
                 const state = JSON.parse(msg.body);
-                // 1. 현재 탭의 화면을 직접 업데이트하기 위해 콜백을 호출합니다.
+                // 상태 처리에 대한 모든 책임은 onState 콜백으로 위임합니다.
+                // onState 콜백이 현재 탭 업데이트와 다른 탭 전파(publishState)를 모두 담당해야 합니다.
                 onState(state);
-                // 2. 다른 탭(디스플레이)에 전파하기 위해 stateChannel을 사용합니다.
-                publishState(state);
             });
 
             client.subscribe(`/subscribe/session/${sessionId}`, (msg) => {
