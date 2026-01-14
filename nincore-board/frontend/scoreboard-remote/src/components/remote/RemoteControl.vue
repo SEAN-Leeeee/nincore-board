@@ -367,7 +367,7 @@
 import { disconnectWS, sendCommand } from "@/shared/wsClient";
 import "./remote-control.css";
 import { ActionType } from "@/shared/actionTypes";
-import { subscribeState, loadState } from "@/shared/stateChannel";
+import { subscribeState, loadState, publishState } from "@/shared/stateChannel";
 import RosterModal from "@/components/remote/RosterModal.vue";
 
 const NINCORE_BOARD_STATE = "nincore-board-state";
@@ -636,91 +636,261 @@ export default {
       this.foulDeltaToAdd = delta;
     },
 
-    confirmPlayerFoul(teamKey, playerId) {
-      if (!this.isFoulSelectMode) return;
-      if (this.foulTargetTeam !== teamKey) return;
+        confirmPlayerFoul(teamKey, playerId) {
 
-      const delta = this.foulDeltaToAdd;
-      if (delta !== 1 && delta !== -1) return;
+          if (!this.isFoulSelectMode) return;
 
-      const list = this.players[teamKey] || [];
-      const p = list.find((x) => x.id === playerId);
-      if (!p) return;
+          if (this.foulTargetTeam !== teamKey) return;
 
-      // 개인 파울 증감(0 미만 방지)
-    p.fouls = Math.max(0, (p.fouls || 0) + delta);
+    
 
-  // 팀 파울도 같이 증감(서버 동기화)
-  this.addTeamFoul(teamKey, delta);
+          const delta = this.foulDeltaToAdd;
 
-  // 선택 모드 종료
-  this.isFoulSelectMode = false;
-  this.foulTargetTeam = null;
-  this.foulDeltaToAdd = 0;
-},
+          if (delta !== 1 && delta !== -1) return;
 
-onPlayerFoulClick(teamKey, playerId) {
-  // 파울 선택 모드면 '선수 선택 확정'
-  if (this.isFoulSelectMode && this.foulTargetTeam === teamKey) {
-    this.confirmPlayerFoul(teamKey, playerId);
-    return;
-  }
-  // 기본 모드: 기존처럼 개인 파울 +1
-  this.addPlayerStat(teamKey, playerId, "fouls", 1);
-},
-    undoLastScore() {
-      if (!this.lastScoringPlayer) return;
-      const { teamKey, playerId } = this.lastScoringPlayer;
-      const list = this.players[teamKey];
-      const p = list.find((x) => x.id === playerId);
-      if (p) {
-        p.points = Math.max(0, (p.points || 0) - 1);
-        this.addTeamScore(teamKey, -1);
-        this.lastScoringPlayer = null;
-      }
-    },
-    confirmPlayerScore(teamKey, playerId) {
-      if (!this.isPlayerSelectMode) return;
-      const list = this.players[teamKey];
-      const p = list.find((x) => x.id === playerId);
-      if (!p) return;
-      const points_to_add = this.pointsToAdd;
-      this.isPlayerSelectMode = false;
-      this.pointsToAdd = 0;
-      p.points = Math.max(0, (p.points || 0) + points_to_add);
-      this.addTeamScore(teamKey, points_to_add);
-      this.lastScoringPlayer = { teamKey, playerId };
-    },
-    addPlayerStat(teamKey, playerId, field, delta) {
-      const list = this.players[teamKey];
-      const p = list.find((x) => x.id === playerId);
-      if (!p) return;
-      p[field] = Math.max(0, (p[field] || 0) + delta);
-    },
-    openRoster(teamKey) {
-      if (teamKey !== "Home" && teamKey !== "Away") return;
-      this.rosterModal.team = teamKey;
-      this.rosterModal.open = true;
-    },
-    closeRoster() {
-      this.rosterModal.open = false;
-    },
-    saveRoster({ team, players }) {
-      this.rosterPlayers[team] = players;
-      const selected = players.filter((p) => p.selected).slice(0, 5);
-      this.players[team] = selected.map((p) => ({
-        id: p.id,
-        no: p.no,
-        name: p.name,
-        points: 0,
-        assists: 0,
-        rebounds: 0,
-        steals: 0,
-        fouls: 0,
-      }));
-      this.closeRoster();
-    },
-    toggleGameClock() {
+    
+
+          const list = this.players[teamKey] || [];
+
+          const p = list.find((x) => x.id === playerId);
+
+          if (!p) return;
+
+    
+
+          // 개인 파울 증감(0 미만 방지)
+
+          p.fouls = Math.max(0, (p.fouls || 0) + delta);
+
+    
+
+          // 팀 파울도 같이 증감(로컬)
+
+          if (teamKey === 'Home') {
+
+            this.teams.Home.homeFoul += delta;
+
+          } else {
+
+            this.teams.Away.awayFoul += delta;
+
+          }
+
+    
+
+          // 선택 모드 종료
+
+          this.isFoulSelectMode = false;
+
+          this.foulTargetTeam = null;
+
+          this.foulDeltaToAdd = 0;
+
+          this.syncState();
+
+        },
+
+    
+
+        onPlayerFoulClick(teamKey, playerId) {
+
+          // 파울 선택 모드면 '선수 선택 확정'
+
+          if (this.isFoulSelectMode && this.foulTargetTeam === teamKey) {
+
+            this.confirmPlayerFoul(teamKey, playerId);
+
+            return;
+
+          }
+
+          // 기본 모드: 기존처럼 개인 파울 +1
+
+          this.addPlayerStat(teamKey, playerId, "fouls", 1);
+
+        },
+
+        undoLastScore() {
+
+          if (!this.lastScoringPlayer) return;
+
+          const { teamKey, playerId } = this.lastScoringPlayer;
+
+          const list = this.players[teamKey];
+
+          const p = list.find((x) => x.id === playerId);
+
+          if (p) {
+
+            p.points = Math.max(0, (p.points || 0) - 1);
+
+            this.addTeamScore(teamKey, -1);
+
+            this.lastScoringPlayer = null;
+
+          }
+
+        },
+
+        confirmPlayerScore(teamKey, playerId) {
+
+          if (!this.isPlayerSelectMode) return;
+
+          const list = this.players[teamKey];
+
+          const p = list.find((x) => x.id === playerId);
+
+          if (!p) return;
+
+    
+
+          const points_to_add = this.pointsToAdd;
+
+          this.isPlayerSelectMode = false;
+
+          this.pointsToAdd = 0;
+
+    
+
+          // 1. Update local player points
+
+          p.points = Math.max(0, (p.points || 0) + points_to_add);
+
+    
+
+          // 2. Update local team score
+
+          if (teamKey === 'Home') {
+
+            this.teams.Home.homeScore += points_to_add;
+
+          } else {
+
+            this.teams.Away.awayScore += points_to_add;
+
+          }
+
+    
+
+          this.lastScoringPlayer = { teamKey, playerId, points: points_to_add };
+
+    
+
+          // 3. Sync everything
+
+          this.syncState();
+
+        },
+
+        addPlayerStat(teamKey, playerId, field, delta) {
+
+          const list = this.players[teamKey];
+
+          const p = list.find((x) => x.id === playerId);
+
+          if (!p) return;
+
+          p[field] = Math.max(0, (p[field] || 0) + delta);
+
+          this.syncState();
+
+        },
+
+        openRoster(teamKey) {
+
+          if (teamKey !== "Home" && teamKey !== "Away") return;
+
+          this.rosterModal.team = teamKey;
+
+          this.rosterModal.open = true;
+
+        },
+
+        closeRoster() {
+
+          this.rosterModal.open = false;
+
+        },
+
+        saveRoster({ team, players }) {
+
+          this.rosterPlayers[team] = players;
+
+          const selected = players.filter((p) => p.selected).slice(0, 5);
+
+          this.players[team] = selected.map((p) => ({
+
+            id: p.id,
+
+            no: p.no,
+
+            name: p.name,
+
+            points: 0,
+
+            assists: 0,
+
+            rebounds: 0,
+
+            steals: 0,
+
+            fouls: 0,
+
+          }));
+
+          this.closeRoster();
+
+          this.syncState();
+
+        },
+
+        syncState() {
+
+          const fullState = {
+
+            quarter: this.quarter,
+
+            gameTime: this.gameClockSec,
+
+            shotClock: this.shotClockSec,
+
+            isGameRunning: this.isGameRunning,
+
+            isShotRunning: this.isShotRunning,
+
+            homeScore: this.teams.Home.homeScore,
+
+            homeFoul: this.teams.Home.homeFoul,
+
+            awayScore: this.teams.Away.awayScore,
+
+            awayFoul: this.teams.Away.awayFoul,
+
+            players: this.players,
+
+            rosterPlayers: this.rosterPlayers,
+
+            homeName: this.teams.Home.homeName,
+
+            awayName: this.teams.Away.awayName,
+
+          };
+
+    
+
+          // 1. Persist locally and inform other tabs
+
+          publishState(fullState);
+
+    
+
+          // 2. Inform the backend
+
+          this.pushState(ActionType.STATE_UPDATE, fullState);
+
+        },
+
+        toggleGameClock() {
       // ✅ UI 즉시 반응(정지/시작 토글) + 서버/WS는 동기화 용도
       const next = !this.isGameRunning;
       this.isGameRunning = next;

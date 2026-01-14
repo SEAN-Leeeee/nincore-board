@@ -1,5 +1,6 @@
 package com.nincore.nincoreboardapi.service;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.nincore.nincoreboardapi.domain.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +26,10 @@ public class StateService {
                     .homeFoul(0)
                     .awayFoul(0)
                     .awayScore(0)
-                    .gameTime(7*60)
+                    .gameTime(7 * 60)
                     .shotClock(24)
+                    .players(JsonNodeFactory.instance.objectNode())
+                    .rosterPlayers(JsonNodeFactory.instance.objectNode())
                     .build()
     );
 
@@ -39,7 +42,7 @@ public class StateService {
 
         state.set(s);
 
-        if("QUARTER".equals((cmd.getType()))) {
+        if ("QUARTER".equals((cmd.getType()))) {
             s.setQuarter(cmd.getPayload());
             messagingTemplate.convertAndSend("/subscribe/state", s);
             return s;
@@ -66,6 +69,10 @@ public class StateService {
 
             case "RESET_HOME" -> s.resetHome(cmd.getPayload());
             case "RESET_AWAY" -> s.resetAway(cmd.getPayload());
+            case "STATE_UPDATE" -> {
+                s.setPlayers(cmd.getPayload().get("players"));
+                s.setRosterPlayers(cmd.getPayload().get("rosterPlayers"));
+            }
             default -> log.warn("처리되지 않은 ActionType 입니다: {} ", cmd.getType());
         }
 

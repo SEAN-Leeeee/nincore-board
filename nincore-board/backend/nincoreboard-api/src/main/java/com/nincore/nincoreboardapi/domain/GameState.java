@@ -21,6 +21,16 @@ public class GameState {
     private String awayName;
     private int awayScore;
     private int awayFoul;
+    private JsonNode players;
+    private JsonNode rosterPlayers;
+
+    public void setPlayers(JsonNode players) {
+        if (players != null) this.players = players;
+    }
+
+    public void setRosterPlayers(JsonNode rosterPlayers) {
+        if (rosterPlayers != null) this.rosterPlayers = rosterPlayers;
+    }
 
     public void minusGameTime(int i) {
         this.gameTime = i;
