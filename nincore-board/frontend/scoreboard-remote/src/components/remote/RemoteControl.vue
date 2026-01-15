@@ -110,11 +110,11 @@
                   <div class="rc-mini-title">점수</div>
                   <div class="rc-score-2rows">
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection(1)" :disabled="activePlayers.Home.length === 0">+1</button>
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection(2)" :disabled="activePlayers.Home.length === 0">+2</button>
+                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Home', 1)" :disabled="activePlayers.Home.length === 0">+1</button>
+                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Home', 2)" :disabled="activePlayers.Home.length === 0">+2</button>
                     </div>
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection(3)" :disabled="activePlayers.Home.length === 0">+3</button>
+                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Home', 3)" :disabled="activePlayers.Home.length === 0">+3</button>
                       <button
                           class="rc-btn rc-btn--pill rc-btn--ghost"
                           @click="undoLastScore"
@@ -165,7 +165,7 @@
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.points }}</div>
-                  <button class="rc-plus" :class="{ 'blinking-effect': isPlayerSelectMode }" @click="confirmPlayerScore('Home', p.id)" :disabled="!isPlayerSelectMode">득점</button>
+                  <button class="rc-plus" :class="{ 'blinking-effect': isPlayerSelectMode && scoreTargetTeam === 'Home' }" @click="confirmPlayerScore('Home', p.id)" :disabled="!isPlayerSelectMode || scoreTargetTeam !== 'Home'">득점</button>
                 </div>
 
                 <div class="rc-statcell">
@@ -189,7 +189,7 @@
                       class="rc-plus"
                       :class="{ 'blinking-effect': isFoulSelectMode && foulTargetTeam === 'Home' }"
                       @click="onPlayerFoulClick('Home', p.id)"
-                      :disabled="isFoulSelectMode && foulTargetTeam !== 'Home'"
+                      :disabled="!isFoulSelectMode || (isFoulSelectMode && foulTargetTeam !== 'Home')"
                   >
                     {{ (isFoulSelectMode && foulTargetTeam === 'Home') ? '파울' : '+1' }}
                   </button>
@@ -228,11 +228,11 @@
                   <div class="rc-mini-title">점수</div>
                   <div class="rc-score-2rows">
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection(1)" :disabled="activePlayers.Away.length === 0">+1</button>
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection(2)" :disabled="activePlayers.Away.length === 0">+2</button>
+                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Away', 1)" :disabled="activePlayers.Away.length === 0">+1</button>
+                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Away', 2)" :disabled="activePlayers.Away.length === 0">+2</button>
                     </div>
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection(3)" :disabled="activePlayers.Away.length === 0">+3</button>
+                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Away', 3)" :disabled="activePlayers.Away.length === 0">+3</button>
                       <button
                           class="rc-btn rc-btn--pill rc-btn--ghost"
                           @click="undoLastScore"
@@ -284,7 +284,7 @@
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.points }}</div>
-                  <button class="rc-plus" :class="{ 'blinking-effect': isPlayerSelectMode }" @click="confirmPlayerScore('Away', p.id)" :disabled="!isPlayerSelectMode">득점</button>
+                  <button class="rc-plus" :class="{ 'blinking-effect': isPlayerSelectMode && scoreTargetTeam === 'Away' }" @click="confirmPlayerScore('Away', p.id)" :disabled="!isPlayerSelectMode || scoreTargetTeam !== 'Away'">득점</button>
                 </div>
 
                 <div class="rc-statcell">
@@ -308,7 +308,7 @@
                       class="rc-plus"
                       :class="{ 'blinking-effect': isFoulSelectMode && foulTargetTeam === 'Away' }"
                       @click="onPlayerFoulClick('Away', p.id)"
-                      :disabled="isFoulSelectMode && foulTargetTeam !== 'Away'"
+                      :disabled="!isFoulSelectMode || (isFoulSelectMode && foulTargetTeam !== 'Away')"
                   >
                     {{ (isFoulSelectMode && foulTargetTeam === 'Away') ? '파울' : '+1' }}
                   </button>
@@ -399,6 +399,7 @@ export default {
       isFoulSelectMode: false,
       foulTargetTeam: null,
       foulDeltaToAdd: 0,
+      scoreTargetTeam: null,
     };
   },
   computed: {
@@ -611,286 +612,336 @@ export default {
       const action = teamKey === "Home" ? ActionType.HOME_FOUL : ActionType.AWAY_FOUL;
       this.pushState(action, payload);
     },
-    startPlayerSelection(points) {
-      this.isFoulSelectMode = false;
-      this.foulTargetTeam = null;
-      this.foulDeltaToAdd = 0;
-
-      this.isPlayerSelectMode = true;
-      this.pointsToAdd = points;
-    },
-    startFoulSelection(teamKey, delta) {
-      if (teamKey !== "Home" && teamKey !== "Away") return;
-      if (delta !== 1 && delta !== -1) return;
-      this.isPlayerSelectMode = false;
-      this.pointsToAdd = 0;
-
-      const currentTeamFoul = teamKey === "Home"
-          ? Number(this.teams.Home.homeFoul || 0)
-          : Number(this.teams.Away.awayFoul || 0);
-
-      if (delta === -1 && currentTeamFoul <= 0) return;
-
-      this.isFoulSelectMode = true;
-      this.foulTargetTeam = teamKey;
-      this.foulDeltaToAdd = delta;
-    },
-
-        confirmPlayerFoul(teamKey, playerId) {
-
-          if (!this.isFoulSelectMode) return;
-
-          if (this.foulTargetTeam !== teamKey) return;
-
-    
-
-          const delta = this.foulDeltaToAdd;
-
-          if (delta !== 1 && delta !== -1) return;
-
-    
-
-          const list = this.players[teamKey] || [];
-
-          const p = list.find((x) => x.id === playerId);
-
-          if (!p) return;
-
-    
-
-          // 개인 파울 증감(0 미만 방지)
-
-          p.fouls = Math.max(0, (p.fouls || 0) + delta);
-
-    
-
-          // 팀 파울도 같이 증감(로컬)
-
-          if (teamKey === 'Home') {
-
-            this.teams.Home.homeFoul += delta;
-
-          } else {
-
-            this.teams.Away.awayFoul += delta;
-
-          }
-
-    
-
-          // 선택 모드 종료
-
+        startPlayerSelection(teamKey, points) {
           this.isFoulSelectMode = false;
-
           this.foulTargetTeam = null;
-
           this.foulDeltaToAdd = 0;
-
-          this.syncState();
-
+    
+          this.isPlayerSelectMode = true;
+          this.pointsToAdd = points;
+          this.scoreTargetTeam = teamKey; // Set the target team for scoring
         },
-
-    
-
-        onPlayerFoulClick(teamKey, playerId) {
-
-          // 파울 선택 모드면 '선수 선택 확정'
-
-          if (this.isFoulSelectMode && this.foulTargetTeam === teamKey) {
-
-            this.confirmPlayerFoul(teamKey, playerId);
-
-            return;
-
-          }
-
-          // 기본 모드: 기존처럼 개인 파울 +1
-
-          this.addPlayerStat(teamKey, playerId, "fouls", 1);
-
-        },
-
-        undoLastScore() {
-
-          if (!this.lastScoringPlayer) return;
-
-          const { teamKey, playerId } = this.lastScoringPlayer;
-
-          const list = this.players[teamKey];
-
-          const p = list.find((x) => x.id === playerId);
-
-          if (p) {
-
-            p.points = Math.max(0, (p.points || 0) - 1);
-
-            this.addTeamScore(teamKey, -1);
-
-            this.lastScoringPlayer = null;
-
-          }
-
-        },
-
-        confirmPlayerScore(teamKey, playerId) {
-
-          if (!this.isPlayerSelectMode) return;
-
-          const list = this.players[teamKey];
-
-          const p = list.find((x) => x.id === playerId);
-
-          if (!p) return;
-
-    
-
-          const points_to_add = this.pointsToAdd;
-
-          this.isPlayerSelectMode = false;
-
-          this.pointsToAdd = 0;
-
-    
-
-          // 1. Update local player points
-
-          p.points = Math.max(0, (p.points || 0) + points_to_add);
-
-    
-
-          // 2. Update local team score
-
-          if (teamKey === 'Home') {
-
-            this.teams.Home.homeScore += points_to_add;
-
-          } else {
-
-            this.teams.Away.awayScore += points_to_add;
-
-          }
-
-    
-
-          this.lastScoringPlayer = { teamKey, playerId, points: points_to_add };
-
-    
-
-          // 3. Sync everything
-
-          this.syncState();
-
-        },
-
-        addPlayerStat(teamKey, playerId, field, delta) {
-
-          const list = this.players[teamKey];
-
-          const p = list.find((x) => x.id === playerId);
-
-          if (!p) return;
-
-          p[field] = Math.max(0, (p[field] || 0) + delta);
-
-          this.syncState();
-
-        },
-
-        openRoster(teamKey) {
-
+        startFoulSelection(teamKey, delta) {
           if (teamKey !== "Home" && teamKey !== "Away") return;
-
-          this.rosterModal.team = teamKey;
-
-          this.rosterModal.open = true;
-
-        },
-
-        closeRoster() {
-
-          this.rosterModal.open = false;
-
-        },
-
-        saveRoster({ team, players }) {
-
-          this.rosterPlayers[team] = players;
-
-          const selected = players.filter((p) => p.selected).slice(0, 5);
-
-          this.players[team] = selected.map((p) => ({
-
-            id: p.id,
-
-            no: p.no,
-
-            name: p.name,
-
-            points: 0,
-
-            assists: 0,
-
-            rebounds: 0,
-
-            steals: 0,
-
-            fouls: 0,
-
-          }));
-
-          this.closeRoster();
-
-          this.syncState();
-
-        },
-
-        syncState() {
-
-          const fullState = {
-
-            quarter: this.quarter,
-
-            gameTime: this.gameClockSec,
-
-            shotClock: this.shotClockSec,
-
-            isGameRunning: this.isGameRunning,
-
-            isShotRunning: this.isShotRunning,
-
-            homeScore: this.teams.Home.homeScore,
-
-            homeFoul: this.teams.Home.homeFoul,
-
-            awayScore: this.teams.Away.awayScore,
-
-            awayFoul: this.teams.Away.awayFoul,
-
-            players: this.players,
-
-            rosterPlayers: this.rosterPlayers,
-
-            homeName: this.teams.Home.homeName,
-
-            awayName: this.teams.Away.awayName,
-
-          };
-
+          if (delta !== 1 && delta !== -1) return;
+          this.isPlayerSelectMode = false;
+          this.pointsToAdd = 0;
+          this.scoreTargetTeam = null; // Clear score target when starting foul selection
     
-
-          // 1. Persist locally and inform other tabs
-
-          publishState(fullState);
-
+          const currentTeamFoul = teamKey === "Home"
+              ? Number(this.teams.Home.homeFoul || 0)
+              : Number(this.teams.Away.awayFoul || 0);
     
-
-          // 2. Inform the backend
-
-          this.pushState(ActionType.STATE_UPDATE, fullState);
-
+          if (delta === -1 && currentTeamFoul <= 0) return;
+    
+          this.isFoulSelectMode = true;
+          this.foulTargetTeam = teamKey;
+          this.foulDeltaToAdd = delta;
         },
-
-        toggleGameClock() {
+    
+            confirmPlayerFoul(teamKey, playerId) {
+    
+              if (!this.isFoulSelectMode) return;
+    
+              if (this.foulTargetTeam !== teamKey) return;
+    
+        
+    
+              const delta = this.foulDeltaToAdd;
+    
+              if (delta !== 1 && delta !== -1) return;
+    
+        
+    
+              const list = this.players[teamKey] || [];
+    
+              const p = list.find((x) => x.id === playerId);
+    
+              if (!p) return;
+    
+        
+    
+                        // 개인 파울 증감(0 미만 방지)
+    
+        
+    
+                        p.fouls = Math.max(0, (p.fouls || 0) + delta);
+    
+        
+    
+              
+    
+        
+    
+                        // 팀 파울 재계산 (개인 파울 합산 및 5개 상한 적용)
+    
+        
+    
+                        this.recalculateTeamFouls(teamKey);
+    
+        
+    
+              
+    
+        
+    
+              // 선택 모드 종료
+    
+              this.isFoulSelectMode = false;
+    
+              this.foulTargetTeam = null;
+    
+              this.foulDeltaToAdd = 0;
+    
+              this.syncState();
+    
+            },
+    
+        
+    
+            onPlayerFoulClick(teamKey, playerId) {
+    
+              // 파울 선택 모드면 '선수 선택 확정'
+    
+              if (this.isFoulSelectMode && this.foulTargetTeam === teamKey) {
+    
+                this.confirmPlayerFoul(teamKey, playerId);
+    
+                return;
+    
+              }
+    
+              // 기본 모드: 기존처럼 개인 파울 +1
+    
+              this.addPlayerStat(teamKey, playerId, "fouls", 1);
+    
+            },
+    
+            undoLastScore() {
+    
+              if (!this.lastScoringPlayer) return;
+    
+              const { teamKey, playerId } = this.lastScoringPlayer;
+    
+              const list = this.players[teamKey];
+    
+              const p = list.find((x) => x.id === playerId);
+    
+              if (p) {
+    
+                p.points = Math.max(0, (p.points || 0) - 1);
+    
+                this.addTeamScore(teamKey, -1);
+    
+                this.lastScoringPlayer = null;
+    
+              }
+    
+            },
+    
+            confirmPlayerScore(teamKey, playerId) {
+              if (!this.isPlayerSelectMode || this.scoreTargetTeam !== teamKey) return; // Added check for scoreTargetTeam
+    
+              const list = this.players[teamKey];
+              const p = list.find((x) => x.id === playerId);
+              if (!p) return;
+    
+              const points_to_add = this.pointsToAdd;
+              this.isPlayerSelectMode = false;
+              this.pointsToAdd = 0;
+              this.scoreTargetTeam = null; // Reset score target after scoring
+    
+              // 1. Update local player points
+              p.points = Math.max(0, (p.points || 0) + points_to_add);
+    
+              // 2. Update local team score
+              if (teamKey === 'Home') {
+                this.teams.Home.homeScore += points_to_add;
+              } else {
+                this.teams.Away.awayScore += points_to_add;
+              }
+    
+              this.lastScoringPlayer = { teamKey, playerId, points: points_to_add };
+    
+              // 3. Sync everything
+              this.syncState();
+            },
+    
+            addPlayerStat(teamKey, playerId, field, delta) {
+    
+              const list = this.players[teamKey];
+    
+              const p = list.find((x) => x.id === playerId);
+    
+              if (!p) return;
+    
+                        p[field] = Math.max(0, (p[field] || 0) + delta);
+    
+                        if (field === 'fouls') {
+    
+                          this.recalculateTeamFouls(teamKey);
+    
+                        }
+    
+                        this.syncState();
+    
+            },
+    
+            openRoster(teamKey) {
+    
+              if (teamKey !== "Home" && teamKey !== "Away") return;
+    
+              this.rosterModal.team = teamKey;
+    
+              this.rosterModal.open = true;
+    
+            },
+    
+            closeRoster() {
+    
+              this.rosterModal.open = false;
+    
+            },
+    
+            saveRoster({ team, players }) {
+    
+              this.rosterPlayers[team] = players;
+    
+              const selected = players.filter((p) => p.selected).slice(0, 5);
+    
+              this.players[team] = selected.map((p) => ({
+    
+                id: p.id,
+    
+                no: p.no,
+    
+                name: p.name,
+    
+                points: 0,
+    
+                assists: 0,
+    
+                rebounds: 0,
+    
+                steals: 0,
+    
+                fouls: 0,
+    
+              }));
+    
+              this.closeRoster();
+    
+              this.syncState();
+    
+            },
+    
+                        syncState() {
+    
+            
+    
+                          const fullState = {
+    
+            
+    
+                            quarter: this.quarter,
+    
+            
+    
+                            gameTime: this.gameClockSec,
+    
+            
+    
+                            shotClock: this.shotClockSec,
+    
+            
+    
+                            isGameRunning: this.isGameRunning,
+    
+            
+    
+                            isShotRunning: this.isShotRunning,
+    
+            
+    
+                            homeScore: this.teams.Home.homeScore,
+    
+            
+    
+                            homeFoul: this.teams.Home.homeFoul,
+    
+            
+    
+                            awayScore: this.teams.Away.awayScore,
+    
+            
+    
+                            awayFoul: this.teams.Away.awayFoul,
+    
+            
+    
+                            players: this.players,
+    
+            
+    
+                            rosterPlayers: this.rosterPlayers,
+    
+            
+    
+                            homeName: this.teams.Home.homeName,
+    
+            
+    
+                            awayName: this.teams.Away.awayName,
+    
+            
+    
+                          };
+    
+                
+    
+                          // 1. Persist locally and inform other tabs
+    
+                          publishState(fullState);
+    
+                
+    
+                          // 2. Inform the backend
+    
+                          this.pushState(ActionType.STATE_UPDATE, fullState);
+    
+                        },
+    
+                        recalculateTeamFouls(teamKey) {
+    
+                          const teamPlayers = this.players[teamKey] || [];
+    
+                          let totalFouls = 0;
+    
+                          for (const p of teamPlayers) {
+    
+                            totalFouls += (p.fouls || 0);
+    
+                          }
+    
+                          // Cap team fouls at 5
+    
+                          const cappedFouls = Math.min(5, totalFouls);
+    
+            
+    
+                          if (teamKey === 'Home') {
+    
+                            this.teams.Home.homeFoul = cappedFouls;
+    
+                          } else {
+    
+                            this.teams.Away.awayFoul = cappedFouls;
+    
+                          }
+    
+                        },
+    
+            toggleGameClock() {
       // ✅ UI 즉시 반응(정지/시작 토글) + 서버/WS는 동기화 용도
       const next = !this.isGameRunning;
       this.isGameRunning = next;

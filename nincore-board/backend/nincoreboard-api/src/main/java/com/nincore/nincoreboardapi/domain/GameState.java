@@ -32,6 +32,19 @@ public class GameState {
         if (rosterPlayers != null) this.rosterPlayers = rosterPlayers;
     }
 
+    // New direct setters for STATE_UPDATE action
+    public void setQuarter(int quarter) { this.quarter = quarter; }
+    public void setGameTime(int gameTime) { this.gameTime = gameTime; }
+    public void setIsGameRunning(boolean isGameRunning) { this.isGameRunning = isGameRunning; }
+    public void setShotClock(int shotClock) { this.shotClock = shotClock; }
+    public void setIsShotClockRunning(boolean isShotClockRunning) { this.isShotClockRunning = isShotClockRunning; }
+    public void setHomeName(String homeName) { this.homeName = homeName; }
+    public void setHomeScore(int homeScore) { this.homeScore = homeScore; }
+    public void setHomeFoul(int homeFoul) { this.homeFoul = homeFoul; }
+    public void setAwayName(String awayName) { this.awayName = awayName; }
+    public void setAwayScore(int awayScore) { this.awayScore = awayScore; }
+    public void setAwayFoul(int awayFoul) { this.awayFoul = awayFoul; }
+
     public void minusGameTime(int i) {
         this.gameTime = i;
     }

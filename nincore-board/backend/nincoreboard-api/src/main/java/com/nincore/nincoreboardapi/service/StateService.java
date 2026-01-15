@@ -1,5 +1,6 @@
 package com.nincore.nincoreboardapi.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.nincore.nincoreboardapi.domain.*;
 import lombok.RequiredArgsConstructor;
@@ -70,8 +71,20 @@ public class StateService {
             case "RESET_HOME" -> s.resetHome(cmd.getPayload());
             case "RESET_AWAY" -> s.resetAway(cmd.getPayload());
             case "STATE_UPDATE" -> {
-                s.setPlayers(cmd.getPayload().get("players"));
-                s.setRosterPlayers(cmd.getPayload().get("rosterPlayers"));
+                JsonNode payload = cmd.getPayload();
+                if (payload.has("quarter")) s.setQuarter(payload.get("quarter").asInt());
+                if (payload.has("gameTime")) s.setGameTime(payload.get("gameTime").asInt());
+                if (payload.has("isGameRunning")) s.setIsGameRunning(payload.get("isGameRunning").asBoolean());
+                if (payload.has("shotClock")) s.setShotClock(payload.get("shotClock").asInt());
+                if (payload.has("isShotRunning")) s.setIsShotClockRunning(payload.get("isShotRunning").asBoolean());
+                if (payload.has("homeName")) s.setHomeName(payload.get("homeName").asText());
+                if (payload.has("homeScore")) s.setHomeScore(payload.get("homeScore").asInt());
+                if (payload.has("homeFoul")) s.setHomeFoul(payload.get("homeFoul").asInt());
+                if (payload.has("awayName")) s.setAwayName(payload.get("awayName").asText());
+                if (payload.has("awayScore")) s.setAwayScore(payload.get("awayScore").asInt());
+                if (payload.has("awayFoul")) s.setAwayFoul(payload.get("awayFoul").asInt());
+                if (payload.has("players")) s.setPlayers(payload.get("players"));
+                if (payload.has("rosterPlayers")) s.setRosterPlayers(payload.get("rosterPlayers"));
             }
             default -> log.warn("처리되지 않은 ActionType 입니다: {} ", cmd.getType());
         }

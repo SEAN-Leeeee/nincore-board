@@ -75,7 +75,7 @@ export default {
       return this.localPlayers.filter(p => p.selected).length;
     },
     canSelectAll() {
-      return this.localPlayers.length === 5;
+      return this.localPlayers.length <= 5;
     },
     isAllSelected() {
       return this.localPlayers.length > 0 && this.selectedCount === this.localPlayers.length;
