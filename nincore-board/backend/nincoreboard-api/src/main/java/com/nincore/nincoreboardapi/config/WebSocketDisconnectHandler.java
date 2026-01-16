@@ -2,6 +2,7 @@ package com.nincore.nincoreboardapi.config;
 
 import com.nincore.nincoreboardapi.dto.LogoutRequest;
 import com.nincore.nincoreboardapi.service.SessionService;
+import com.nincore.nincoreboardapi.service.StateService;
 import com.nincore.nincoreboardapi.service.WebSocketSessionRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ public class WebSocketDisconnectHandler implements ApplicationListener<SessionDi
     private final WebSocketSessionRegistry webSocketSessionRegistry;
     private final SessionService sessionService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final StateService stateService;
 
     @Override
     public void onApplicationEvent(SessionDisconnectEvent event) {
@@ -28,19 +30,26 @@ public class WebSocketDisconnectHandler implements ApplicationListener<SessionDi
 
         log.info("WebSocket session disconnected: {}", webSocketSessionId);
 
-        webSocketSessionRegistry.getBoardSessionId(webSocketSessionId).ifPresent(boardSessionId -> {
-            log.info("Found BoardSession {} associated with the disconnected WebSocket session. Cleaning up.\", boardSessionId)");
+        Integer boardSessionId = webSocketSessionRegistry.getBoardSessionId(webSocketSessionId);
 
-            sessionService.logout(new LogoutRequest(boardSessionId));
+        if (boardSessionId != null) {
+            log.info("Found BoardSession {} associated with the disconnected WebSocket session. Cleaning up.", boardSessionId);
+
+            stateService.removeSessionState(boardSessionId);
+            log.info("Removed GameState for BoardSession ID: {}", boardSessionId);
+
+            sessionService.logout(new LogoutRequest(boardSessionId.longValue()));
             log.info("BoardSession {} has been deleted from the database.", boardSessionId);
 
-            String destination = "/subcribe/session/" + boardSessionId;
+            String destination = "/subscribe/session/" + boardSessionId;
             messagingTemplate.convertAndSend(destination, "{\"status\":\"TERMINATED\"}");
             log.info("Sent TERMINATED signal to destination: {}", destination);
 
             webSocketSessionRegistry.unregisterSession(webSocketSessionId);
             log.info("Unregistered WebSocket session {}.", webSocketSessionId);
+        } else {
+            log.warn("Disconnected WebSocket session {} was not associated with any BoardSession. No cleanup performed.", webSocketSessionId);
+        }
 
-        });
     }
 }

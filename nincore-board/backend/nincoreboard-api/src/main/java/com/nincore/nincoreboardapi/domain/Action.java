@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class Action {
     private String type;
     private JsonNode payload;
+    private int session;
 }

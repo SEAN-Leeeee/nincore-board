@@ -20,6 +20,7 @@ public class WebSocketController {
         String webSocketSessionId = headerAccessor.getSessionId();
         String boardSessionId = request.getSessionId();
 
+        log.debug("webSocketConnected! = {} ", boardSessionId);
         if (webSocketSessionId != null && boardSessionId != null) {
             log.info("Registering WebSocket session {} for BoardSession {}", webSocketSessionId, boardSessionId);
             webSocketRegistry.registrySession(webSocketSessionId, boardSessionId);

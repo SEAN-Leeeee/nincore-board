@@ -14,9 +14,21 @@ public class WebSocketSessionRegistry {
         sessionMap.put(webSocketSessionId, boardSessionId);
     }
 
-    public Optional<String> getBoardSessionId(String webSocketSessionId) {
-        return Optional.ofNullable(sessionMap.get(webSocketSessionId));
+    public Integer getBoardSessionId(String webSocketSessionId) {
+        String boardSessionIdString = sessionMap.get(webSocketSessionId);
+
+        if (boardSessionIdString == null) {
+            return null;
+        }
+
+        try {
+            return Integer.parseInt(boardSessionIdString);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+
     }
+
 
     public void unregisterSession(String webSocketSessionId) {
         sessionMap.remove(webSocketSessionId);

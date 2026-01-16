@@ -16,23 +16,37 @@ public class ClockService {
 
     @Scheduled(fixedRate = 1000)
     public void tick() {
-        GameState currentState = stateService.get();
+        stateService.getAllSessionStates().forEach((sessionId, gameStateRef) -> {
+            GameState currentState = gameStateRef.get();
+            boolean isStateChanged = false;
 
-        if (currentState.isGameRunning()) {
-            if(currentState.getGameTime() > 0) {
-                currentState.minusGameTime(currentState.getGameTime() - 1);
-            } else {
-                currentState.stopGameRunning(false);
+            if (currentState.isGameRunning()) {
+                if(currentState.getGameTime() > 0) {
+                    currentState.minusGameTime(currentState.getGameTime() - 1);
+                    isStateChanged = true;
+                } else {
+                    currentState.stopGameRunning(false);
+                    isStateChanged = true;
+                }
             }
-        }
 
-        if (currentState.isShotClockRunning()) {
-            if (currentState.getShotClock() > 0) {
-                currentState.minusShotClock(currentState.getShotClock() -1);
-            } else {
-                currentState.stopShotClock(false);
+            if (currentState.isShotClockRunning()) {
+                if (currentState.getShotClock() > 0) {
+                    currentState.minusShotClock(currentState.getShotClock() -1);
+                    isStateChanged = true;
+                } else {
+                    currentState.stopShotClock(false);
+                    isStateChanged = true;
+                }
             }
-        }
-        simpMessagingTemplate.convertAndSend("/subscribe/state", currentState);
+
+            if (isStateChanged) {
+                String destination = "/subscribe/state/" + sessionId;
+                simpMessagingTemplate.convertAndSend(destination, currentState);
+            }
+        });
+
     }
+
+
 }

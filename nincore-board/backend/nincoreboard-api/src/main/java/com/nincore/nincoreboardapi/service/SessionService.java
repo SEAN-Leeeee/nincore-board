@@ -20,11 +20,11 @@ public class SessionService {
 
     @Transactional
     public void logout(LogoutRequest logoutRequest) {
-        Optional<BoardSession> sessionOptional = boardSessionRepository.findById(Long.parseLong(logoutRequest.getSessionId()));
+        Optional<BoardSession> sessionOptional = boardSessionRepository.findById(logoutRequest.getSessionId());
         if (sessionOptional.isPresent()) {
             BoardSession session = sessionOptional.get();
-            session.delete(); // isDeleted를 true로 변경
-            boardSessionRepository.save(session); // 변경된 상태를 저장
+            session.delete();
+            boardSessionRepository.save(session);
         }
     }
 

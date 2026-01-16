@@ -25,7 +25,7 @@ export function connectWS(currentSessionId, onState, onSessionEnd) {
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
         onConnect: () => {
-            console.log("WebSocket Connected!");
+            console.log("WebSocket Connected! = " + sessionId);
 
             client.publish({
                 destination: "/publish/session/register",
@@ -33,16 +33,15 @@ export function connectWS(currentSessionId, onState, onSessionEnd) {
             });
             console.log(`Session registered with ID: ${sessionId}`);
 
-            // 상태 업데이트를 받으면,
-            client.subscribe("/subscribe/state", (msg) => {
+            client.subscribe(`/subscribe/session/${sessionId}`, (msg) => {
+                console.log("asd: "+msg)
                 const state = JSON.parse(msg.body);
-                // 상태 처리에 대한 모든 책임은 onState 콜백으로 위임합니다.
-                // onState 콜백이 현재 탭 업데이트와 다른 탭 전파(publishState)를 모두 담당해야 합니다.
                 onState(state);
             });
 
             client.subscribe(`/subscribe/session/${sessionId}`, (msg) => {
                 const body = JSON.parse(msg.body);
+                console.log("ASdasdas")
                 if (body.status === "TERMINATED") {
                     console.log("Session terminated by server.");
                     onSessionEnd();
@@ -64,9 +63,6 @@ export function connectWS(currentSessionId, onState, onSessionEnd) {
     client.activate();
 }
 
-/**
- * 웹소켓 연결을 종료합니다.
- */
 export function disconnectWS() {
     if (client && client.active) {
         client.deactivate();
@@ -81,18 +77,15 @@ export function disconnectWS() {
  * @param {string} type - 명령 타입 (예: 'NEXT_PLAYER')
  * @param {object} payload - 명령에 필요한 데이터
  */
-export function sendCommand(type, payload = "") {
+export function sendCommand(type, payload = "", session) {
     if (!client || !client.connected) return;
 
     client.publish({
         destination: "/publish/command",
-        body: JSON.stringify({ type, payload }),
+        body: JSON.stringify({ type, payload, session }),
     });
 }
 
-/**
- * 서버에 현재 상태를 요청합니다.
- */
 export function requestCurrentState() {
     if (!client || !client.connected) return;
     client.publish({ destination: "/publish/state", body: "" });
