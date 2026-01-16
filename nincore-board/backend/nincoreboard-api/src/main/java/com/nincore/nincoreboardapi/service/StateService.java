@@ -51,7 +51,7 @@ public class StateService {
         GameState newState = stateRef.get();
 
         String destination = "/subscribe/state/" + sessionId;
-
+        newState.setSessionId(sessionId);
         if ("QUARTER".equals((cmd.getType()))) {
             newState.setQuarter(cmd.getPayload());
         } else {

@@ -133,7 +133,8 @@ export default {
   },
   methods: {
     applyStateToView(s) {
-      if (!s) return;
+      const sessionId = sessionStorage.getItem("sessionId");
+      if (!s || s.sessionId != sessionId) return;
 
       if (typeof s.quarter === "number") this.quarter = s.quarter;
       if (typeof s.gameTime === "number") this.gameClockSec = s.gameTime;

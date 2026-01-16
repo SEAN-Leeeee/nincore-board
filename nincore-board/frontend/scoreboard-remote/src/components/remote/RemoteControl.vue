@@ -426,11 +426,12 @@ export default {
   },
   methods: {
     applyStateToView(s) {
-      if (!s) return;
+      const sessionId = sessionStorage.getItem("sessionId");
+
+      if (!s || sessionId != s.sessionId) return;
       if (typeof s.quarter === "number") this.quarter = s.quarter;
       if (typeof s.gameTime === "number") this.gameClockSec = s.gameTime;
       if (typeof s.shotClock === "number") this.shotClockSec = s.shotClock;
-      // ✅ 서버/WS 필드명 변형 호환
       if (typeof s.isGameRunning === "boolean") this.isGameRunning = s.isGameRunning;
       else if (typeof s.gameIsRunning === "boolean") this.isGameRunning = s.gameIsRunning;
       else if (typeof s.isRunningGame === "boolean") this.isGameRunning = s.isRunningGame;
@@ -518,7 +519,6 @@ export default {
       this.teams.Away.awayScore = 0;
       this.teams.Away.awayFoul = 0;
 
-      console.log("homeeee score : " + this.teams.Home.homeScore)
       const resetStats = (list) =>
         (list || []).map((p) => ({
           ...p,
@@ -533,18 +533,13 @@ export default {
         Away: resetStats(this.players.Away),
       };
 
-      // 2) ✅ 서버 동기화(호환)
-      // 2-1) 혹시 서버가 RESET_ALL을 지원하면 한 방에 끝
       if (ActionType.RESET_ALL) {
         this.pushState(ActionType.RESET_ALL, {});
       }
 
-      // 2-2) 서버가 RESET_ALL을 무시해도 최소한의 리셋이 되도록 개별 액션 전송
-      // 팀 리셋
       if (ActionType.RESET_HOME) this.pushState(ActionType.RESET_HOME, {});
       if (ActionType.RESET_AWAY) this.pushState(ActionType.RESET_AWAY, {});
 
-      // 쿼터/시간/샷클락 리셋
       if (ActionType.QUARTER) this.pushState(ActionType.QUARTER, { quarter: 1 });
       if (ActionType.SETTING_GAME_TIME) {
         this.pushState(ActionType.SETTING_GAME_TIME, {
@@ -560,7 +555,6 @@ export default {
           isSetHalf: false,
         });
       }
-      // ✅ 서버가 '전체 상태 덮어쓰기'를 지원하면 한 번 더 강제(디스플레이 동기화 목적)
       if (ActionType.STATE_UPDATE) {
         this.pushState(ActionType.STATE_UPDATE, {
           quarter: 1,
@@ -637,57 +631,22 @@ export default {
             confirmPlayerFoul(teamKey, playerId) {
 
               if (!this.isFoulSelectMode) return;
-
               if (this.foulTargetTeam !== teamKey) return;
-
-
 
               const delta = this.foulDeltaToAdd;
 
               if (delta !== 1 && delta !== -1) return;
 
-
-
               const list = this.players[teamKey] || [];
-
               const p = list.find((x) => x.id === playerId);
 
               if (!p) return;
 
-
-
-                        // 개인 파울 증감(0 미만 방지)
-
-
-
-                        p.fouls = Math.max(0, (p.fouls || 0) + delta);
-
-
-
-
-
-
-
-                        // 팀 파울 재계산 (개인 파울 합산 및 5개 상한 적용)
-
-
-
-                        this.recalculateTeamFouls(teamKey);
-
-
-
-
-
-
-
-              // 선택 모드 종료
-
+              p.fouls = Math.max(0, (p.fouls || 0) + delta);
+              this.recalculateTeamFouls(teamKey);
               this.isFoulSelectMode = false;
-
               this.foulTargetTeam = null;
-
               this.foulDeltaToAdd = 0;
-
               this.syncState();
 
             },

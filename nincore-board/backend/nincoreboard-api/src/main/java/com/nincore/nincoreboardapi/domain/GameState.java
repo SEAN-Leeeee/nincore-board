@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Slf4j
 public class GameState {
+    private int sessionId;
     private int quarter;
     private int gameTime;
     private boolean isGameRunning;
@@ -50,6 +51,10 @@ public class GameState {
     }
     public void minusShotClock(int i) {
         this.shotClock = i;
+    }
+
+    public void setSessionId(int sessionId) {
+        this.sessionId = sessionId;
     }
 
     public void setGameTime(JsonNode payload) {

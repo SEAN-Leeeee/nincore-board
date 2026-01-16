@@ -9,6 +9,7 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.util.Optional;
@@ -19,24 +20,29 @@ public class StateWsController {
 
     private final StateService stateService;
     private final WebSocketSessionRegistry webSocketRegistry;
-
+   private final SimpMessagingTemplate messagingTemplate;
     @MessageMapping("/command")
     public void onCommand(Action cmd) {
         stateService.apply(cmd);
     }
 
     @MessageMapping("/state")
-    @SendTo("/subscribe/state")
-    public GameState getState(SimpMessageHeaderAccessor headerAccessor) {
+//    @SendTo("/subscribe/state").
+    public void getState(SimpMessageHeaderAccessor headerAccessor) {
         String simpSessionId = headerAccessor.getSessionId();
         if (simpSessionId == null) {
-            return null;
+            return;
         }
 
         Integer boardSessionId = webSocketRegistry.getBoardSessionId(simpSessionId);
         if (boardSessionId == null) {
-            return null;
+            return;
         }
-        return stateService.get(boardSessionId);
+        GameState currentState = stateService.get(boardSessionId);
+
+        if (currentState != null) {
+            String destination = "/subscribe/state/" + boardSessionId;
+            messagingTemplate.convertAndSend(destination, currentState);
+        }
     }
 }

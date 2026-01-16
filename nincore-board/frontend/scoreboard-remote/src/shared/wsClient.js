@@ -33,15 +33,13 @@ export function connectWS(currentSessionId, onState, onSessionEnd) {
             });
             console.log(`Session registered with ID: ${sessionId}`);
 
-            client.subscribe(`/subscribe/session/${sessionId}`, (msg) => {
-                console.log("asd: "+msg)
+            client.subscribe(`/subscribe/state/${sessionId}`, (msg) => {
                 const state = JSON.parse(msg.body);
                 onState(state);
             });
 
             client.subscribe(`/subscribe/session/${sessionId}`, (msg) => {
                 const body = JSON.parse(msg.body);
-                console.log("ASdasdas")
                 if (body.status === "TERMINATED") {
                     console.log("Session terminated by server.");
                     onSessionEnd();
@@ -52,7 +50,7 @@ export function connectWS(currentSessionId, onState, onSessionEnd) {
             requestCurrentState();
         },
         onDisconnect: () => {
-            console.log("WebSocket Disconnected!");
+            console.log("WebSocket Disconnected!" + sessionId);
         },
         onStompError: (frame) => {
             console.error('Broker reported error: ' + frame.headers['message']);
