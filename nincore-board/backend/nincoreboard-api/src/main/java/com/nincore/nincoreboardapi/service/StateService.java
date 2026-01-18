@@ -54,6 +54,8 @@ public class StateService {
         newState.setSessionId(sessionId);
         if ("QUARTER".equals((cmd.getType()))) {
             newState.setQuarter(cmd.getPayload());
+            newState.setHomeFoul(0);
+            newState.setAwayFoul(0);
         } else {
             log.debug("CMD = " + cmd.getType() + ", payload=" + cmd.getPayload());
 
