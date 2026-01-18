@@ -25,7 +25,7 @@
           <div class="rm-th"></div>
         </div>
 
-        <div class="rm-row" v-for="p in localPlayers" :key="p.id">
+        <div class="rm-row" v-for="(p, index) in localPlayers" :key="p.id">
           <div class="rm-cell rm-cell--center">
             <input
                 type="checkbox"
@@ -36,11 +36,11 @@
           </div>
 
           <div class="rm-cell">
-            <input class="rm-no" v-model="p.no" placeholder="번호" inputmode="numeric" />
+            <input class="rm-no" :value="p.no" @input="handleNoInput($event, index)" placeholder="번호" inputmode="numeric" />
           </div>
 
           <div class="rm-cell">
-            <input class="rm-name" v-model="p.name" placeholder="이름" />
+            <input class="rm-name" v-model="p.name" placeholder="이름" maxlength="4" />
           </div>
 
           <div class="rm-cell rm-cell--center">
@@ -65,9 +65,24 @@ export default {
     players: { type: Array, required: true }
   },
   data() {
+    let initialPlayers = this.players.map(p => ({ ...p }));
+    let startingNextId = this.players.reduce((m, p) => Math.max(m, p.id), 0) + 1;
+
+    // If no players are provided, add 5 empty slots by default
+    if (initialPlayers.length === 0) {
+      for (let i = 0; i < 5; i++) {
+        initialPlayers.push({
+          id: startingNextId++,
+          no: "",
+          name: "",
+          selected: false
+        });
+      }
+    }
+
     return {
-      localPlayers: this.players.map(p => ({ ...p })),
-      nextId: this.players.reduce((m, p) => Math.max(m, p.id), 0) + 1
+      localPlayers: initialPlayers,
+      nextId: startingNextId
     };
   },
   computed: {
@@ -82,6 +97,15 @@ export default {
     }
   },
   methods: {
+    handleNoInput(event, index) {
+      const value = event.target.value;
+      // 숫자가 아닌 문자를 제거하고, 길이를 최대 2자로 제한합니다.
+      const filteredValue = value.replace(/[^0-9]/g, "").slice(0, 2);
+      const player = this.localPlayers[index];
+
+      // Vue의 반응성을 보장하기 위해 this.$set을 사용하여 객체를 교체합니다.
+      this.$set(this.localPlayers, index, { ...player, no: filteredValue });
+    },
     toggleSelect(id) {
       const p = this.localPlayers.find(x => x.id === id);
       if (!p) return;
@@ -115,16 +139,32 @@ export default {
       const selected = this.localPlayers.filter(p => p.selected);
 
       for (const p of selected) {
-        if (!String(p.no || "").trim()) {
+        // 1. 이름 빈칸 검사
+        if (!String(p.name || "").trim()) {
+          alert("선택된 선수의 이름을 입력해주세요.");
+          return;
+        }
+
+        // 2. 등번호 빈칸 검사 (0도 유효한 등번호로 인식)
+        const noStr = String(p.no ?? "").trim();
+        if (noStr === "") {
           alert("선택된 선수의 등번호를 입력해주세요.");
+          return;
+        }
+
+        // 3. 등번호 00-99 숫자 검사
+        const num = parseInt(noStr, 10);
+        if (isNaN(num) || num < 0 || num > 99) {
+          alert("등번호는 00부터 99까지의 숫자만 입력할 수 있습니다.");
           return;
         }
       }
 
+      // 4. 등번호 중복 검사
       const nos = selected.map(p => String(p.no).trim());
       const set = new Set(nos);
       if (set.size !== nos.length) {
-        alert("등번호가 중복되었습니다. 중복 없이 입력해주세요.");
+        alert("중복된 등번호가 있습니다.");
         return;
       }
 
