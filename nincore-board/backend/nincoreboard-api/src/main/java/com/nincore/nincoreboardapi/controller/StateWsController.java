@@ -27,7 +27,6 @@ public class StateWsController {
     }
 
     @MessageMapping("/state")
-//    @SendTo("/subscribe/state").
     public void getState(SimpMessageHeaderAccessor headerAccessor) {
         String simpSessionId = headerAccessor.getSessionId();
         if (simpSessionId == null) {

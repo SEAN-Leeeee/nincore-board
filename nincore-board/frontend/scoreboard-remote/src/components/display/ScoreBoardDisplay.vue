@@ -40,7 +40,7 @@
           <div class="sb-tfoul sb-tfoul--left">T-FOUL {{ homeTeamFouls }}</div>
 
           <div class="sb-shot">
-            <div class="sb-shot-label">샷클락</div>
+            <div class="sb-shot-label">Shot Clock</div>
             <div class="sb-shot-value">{{ shotClockText }}</div>
           </div>
 

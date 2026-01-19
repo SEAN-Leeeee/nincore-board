@@ -33,7 +33,6 @@ public class GameState {
         if (rosterPlayers != null) this.rosterPlayers = rosterPlayers;
     }
 
-    // New direct setters for STATE_UPDATE action
     public void setQuarter(int quarter) { this.quarter = quarter; }
     public void setGameTime(int gameTime) { this.gameTime = gameTime; }
     public void setIsGameRunning(boolean isGameRunning) { this.isGameRunning = isGameRunning; }

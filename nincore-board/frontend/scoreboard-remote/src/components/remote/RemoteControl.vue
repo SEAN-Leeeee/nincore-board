@@ -100,14 +100,10 @@
             </div>
 
             <div class="rc-team__onebox">
-              <div class="rc-team__meta-row">
-                <div class="rc-meta-label">팀 파울</div>
-                <div class="rc-meta-value">{{ teams.Home.homeFoul }}</div>
-              </div>
 
               <div class="rc-team__controls-row">
                 <div>
-                  <div class="rc-mini-title">점수</div>
+                  <div class="rc-mini-title">득점</div>
                   <div class="rc-score-2rows">
                     <div class="rc-score-2rows__row">
                       <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Home', 1)" :disabled="activePlayers.Home.length === 0">+1</button>
@@ -127,7 +123,11 @@
                 </div>
 
                 <div>
-                  <div class="rc-mini-title">파울</div>
+
+                  <div class="rc-team__meta-row">
+                    <div class="rc-meta-label">팀 파울</div>
+                    <div class="rc-meta-value">{{ teams.Home.homeFoul }}</div>
+                  </div>
                   <div class="rc-btn-row">
                     <button class="rc-btn rc-btn--pill"
                             @click="startFoulSelection('Home', 1)"
@@ -225,14 +225,11 @@
             </div>
 
             <div class="rc-team__onebox">
-              <div class="rc-team__meta-row">
-                <div class="rc-meta-label">팀 파울</div>
-                <div class="rc-meta-value">{{ teams.Away.awayFoul }}</div>
-              </div>
+
 
               <div class="rc-team__controls-row">
                 <div>
-                  <div class="rc-mini-title">점수</div>
+                  <div class="rc-mini-title">득점</div>
                   <div class="rc-score-2rows">
                     <div class="rc-score-2rows__row">
                       <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Away', 1)" :disabled="activePlayers.Away.length === 0">+1</button>
@@ -252,7 +249,10 @@
                 </div>
 
                 <div>
-                  <div class="rc-mini-title">파울</div>
+                  <div class="rc-team__meta-row">
+                    <div class="rc-meta-label">팀 파울</div>
+                    <div class="rc-meta-value">{{ teams.Away.awayFoul }}</div>
+                  </div>
                   <div class="rc-btn-row">
                     <button class="rc-btn rc-btn--pill"
                             @click="startFoulSelection('Away', 1)"
@@ -1007,7 +1007,32 @@ export default {
     },
     shutdownSession() {
       if (confirm("세션을 완전히 종료하시겠습니까? 디스플레이 화면도 꺼집니다.")) {
-        disconnectWS();
+        const sessionId = sessionStorage.getItem("sessionId");
+        if (!sessionId) return;
+
+        fetch("/api/shutdown", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: sessionId })
+        })
+        .then(response => {
+          if (response.ok) {
+            console.log("Session shutdown successfully.");
+            disconnectWS(); // 서버에서 성공적으로 처리 후 클라이언트 측 연결 끊기
+            this.$router.push('/'); // 로그인 페이지로 이동
+          } else {
+            console.error("Failed to shut down session on server.");
+            // 서버에서 실패해도 일단 클라이언트 측 연결은 끊고 리디렉션
+            disconnectWS();
+            this.$router.push('/');
+          }
+        })
+        .catch(error => {
+          console.error("Error during session shutdown:", error);
+          // 에러 발생 시에도 일단 클라이언트 측 연결은 끊고 리디렉션
+          disconnectWS();
+          this.$router.push('/');
+        });
       }
     },
   },

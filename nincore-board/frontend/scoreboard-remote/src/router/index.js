@@ -17,26 +17,34 @@ const router = new Router({
   ]
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const loggedIn = sessionStorage.getItem('sessionId');
-  // record.meta가 존재하는지 먼저 확인하여 버그를 수정합니다.
   const requiresAuth = to.matched.some(record => record.meta && record.meta.requiresAuth);
 
-  // --- 디버깅 코드 시작 ---
-  console.log(
-    `[Nav Guard] ` +
-    `From: ${from.path}, ` +
-    `To: ${to.path}, ` +
-    `SessionID: ${loggedIn}, ` +
-    `RequiresAuth: ${requiresAuth}`
-  );
-  // --- 디버깅 코드 끝 ---
-
   if (requiresAuth && !loggedIn) {
-    console.log('[Nav Guard] 인증 필요, 로그인 안됨 -> /login으로 리다이렉트');
+    // 1. 인증이 필요한 페이지에 접속하는데, 세션 ID가 없는 경우 -> 로그인 페이지로
     next('/login');
-  } else {
-    console.log('[Nav Guard] 정상 진행 -> next() 호출');
+  } else if (requiresAuth && loggedIn) {
+    // 2. 인증이 필요한 페이지에 접속하고, 세션 ID도 있는 경우 -> 서버에 유효성 확인
+    try {
+      const response = await fetch(`/api/session/${loggedIn}/status`);
+      if (response.ok) {
+        // 2a. 세션이 유효함 -> 페이지로 정상 이동
+        next();
+      } else {
+        // 2b. 세션이 유효하지 않음 (만료, 삭제 등) -> 세션 정보 지우고 로그인 페이지로
+        sessionStorage.removeItem('sessionId');
+        next('/login');
+      }
+    } catch (error) {
+      // API 호출 중 네트워크 에러 등 발생 -> 로그인 페이지로
+      console.error("Session check failed:", error);
+      sessionStorage.removeItem('sessionId');
+      next('/login');
+    }
+  }
+  else {
+    // 3. 인증이 필요 없는 페이지 (e.g. /login) -> 정상 진행
     next();
   }
 });

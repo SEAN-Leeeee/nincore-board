@@ -48,4 +48,9 @@ public class SessionService {
             return new LoginResponse(savedSession.getId(), true);
         }
     }
+
+    @Transactional(readOnly = true)
+    public boolean isSessionActive(Long sessionId) {
+        return boardSessionRepository.findByIdAndIsDeletedFalse(sessionId).isPresent();
+    }
 }
