@@ -2,26 +2,46 @@ package com.nincore.nincoreboardapi.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.nincore.nincoreboardapi.domain.*;
-import com.nincore.nincoreboardapi.repository.BoardSessionRepository;
-import lombok.RequiredArgsConstructor;
+import com.nincore.nincoreboardapi.domain.Action;
+import com.nincore.nincoreboardapi.domain.GameState;
+import com.nincore.nincoreboardapi.dto.LogoutRequest;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class StateService {
 
     private final SimpMessagingTemplate messagingTemplate;
-    private final BoardSessionRepository boardSessionRepository;
+    private final SessionService sessionService;
 
     private final Map<Integer, AtomicReference<GameState>> sessionStates = new ConcurrentHashMap<>();
+    private final Map<Integer, ScheduledFuture<?>> cleanupTasks = new ConcurrentHashMap<>();
+    private ScheduledExecutorService scheduler;
+
+    public StateService(SimpMessagingTemplate messagingTemplate, @Lazy SessionService sessionService) {
+        this.messagingTemplate = messagingTemplate;
+        this.sessionService = sessionService;
+    }
+
+    @PostConstruct
+    private void init() {
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+    }
+
+    @PreDestroy
+    private void shutdown() {
+        scheduler.shutdown();
+    }
+
 
     private GameState createInitialGameState() {
         return GameState.builder()
@@ -32,7 +52,6 @@ public class StateService {
                 .awayScore(0)
                 .homeFoul(0)
                 .awayFoul(0)
-                .awayScore(0)
                 .gameTime(7 * 60)
                 .shotClock(24)
                 .players(JsonNodeFactory.instance.objectNode())
@@ -102,7 +121,33 @@ public class StateService {
         return newState;
     }
 
+    public void scheduleSessionCleanup(Integer boardSessionId) {
+        cancelSessionCleanup(boardSessionId);
+
+        log.info("Scheduling cleanup for BoardSession ID: {} in 5 minutes.", boardSessionId);
+        Runnable cleanupTask = () -> {
+            log.info("Executing cleanup for BoardSession ID: {}.", boardSessionId);
+            removeSessionState(boardSessionId);
+            sessionService.logout(new LogoutRequest(boardSessionId.longValue()));
+            cleanupTasks.remove(boardSessionId);
+        };
+
+        ScheduledFuture<?> scheduledTask = scheduler.schedule(cleanupTask, 5, TimeUnit.MINUTES);
+        cleanupTasks.put(boardSessionId, scheduledTask);
+    }
+
+    public void cancelSessionCleanup(Integer boardSessionId) {
+        ScheduledFuture<?> scheduledTask = cleanupTasks.get(boardSessionId);
+        if (scheduledTask != null) {
+            log.info("Cancelling scheduled cleanup for BoardSession ID: {}.", boardSessionId);
+            scheduledTask.cancel(false);
+            cleanupTasks.remove(boardSessionId);
+        }
+    }
+
+
     public void removeSessionState(int sessionId) {
+        cancelSessionCleanup(sessionId);
         sessionStates.remove(sessionId);
         log.info("Removed GameState for session ID: {}", sessionId);
     }
@@ -110,6 +155,4 @@ public class StateService {
     public Map<Integer, AtomicReference<GameState>> getAllSessionStates() {
         return sessionStates;
     }
-
-
 }

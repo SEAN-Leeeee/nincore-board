@@ -35,11 +35,8 @@ public class WebSocketDisconnectHandler implements ApplicationListener<SessionDi
         if (boardSessionId != null) {
             log.info("Found BoardSession {} associated with the disconnected WebSocket session. Cleaning up.", boardSessionId);
 
-            stateService.removeSessionState(boardSessionId);
-            log.info("Removed GameState for BoardSession ID: {}", boardSessionId);
-
-            sessionService.logout(new LogoutRequest(boardSessionId.longValue()));
-            log.info("BoardSession {} has been deleted from the database.", boardSessionId);
+            stateService.scheduleSessionCleanup(boardSessionId);
+            log.info("Scheduled cleanup for BoardSession ID: {} on WebSocket disconnect.", boardSessionId);
 
             String destination = "/subscribe/session/" + boardSessionId;
             messagingTemplate.convertAndSend(destination, "{\"status\":\"TERMINATED\"}");

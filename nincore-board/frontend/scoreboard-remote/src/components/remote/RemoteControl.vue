@@ -432,10 +432,8 @@ export default {
     if (initialState) {
       this.applyStateToView(initialState);
     }
-    window.addEventListener("beforeunload", this.handleBeforeUnload);
   },
   beforeDestroy() {
-    window.removeEventListener("beforeunload", this.handleBeforeUnload);
     if (this.unsubscribe) {
       this.unsubscribe();
     }
@@ -478,14 +476,6 @@ export default {
       }
       if (s.rosterPlayers) {
         if (s.rosterPlayers.Home || s.rosterPlayers.Away) this.rosterPlayers = s.rosterPlayers;
-      }
-    },
-    handleBeforeUnload() {
-      const sessionId = sessionStorage.getItem("sessionId");
-      if (sessionId) {
-        const payload = JSON.stringify({ sessionId: sessionId });
-        const blob = new Blob([payload], { type: "application/json" });
-        navigator.sendBeacon("/api/logout", blob);
       }
     },
     pushState(action, payload) {
