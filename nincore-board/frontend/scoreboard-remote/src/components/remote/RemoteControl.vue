@@ -811,7 +811,6 @@ export default {
     saveRoster({ team, players: newRosterInfoFromModal }) {
       const currentActivePlayers = this.players[team] || [];
 
-      // 1. 현재 뛴 선수들의 최신 스탯을 Map으로 만듭니다 (빠른 조회용).
       const statsMap = new Map();
       currentActivePlayers.forEach(p => {
         statsMap.set(p.id, {
@@ -823,33 +822,27 @@ export default {
         });
       });
 
-      // 2. 새로운 전체 선수 명단을 생성합니다.
       const newMasterRoster = newRosterInfoFromModal.map(playerFromModal => {
-        // 이전에 뛰었던 선수의 기록을 이전 마스터 로스터에서 찾습니다.
         const oldPlayerFromMaster = (this.rosterPlayers[team] || []).find(p => p.id === playerFromModal.id);
-        const oldStats = oldPlayerFromMaster ? {
-            points: oldPlayerFromMaster.points || 0,
-            assists: oldPlayerFromMaster.assists || 0,
-            rebounds: oldPlayerFromMaster.rebounds || 0,
-            steals: oldPlayerFromMaster.steals || 0,
-            fouls: oldPlayerFromMaster.fouls || 0,
-        } : {};
-
-        // 현재 뛰고 있던 선수의 최신 기록을 가져옵니다.
         const latestStats = statsMap.get(playerFromModal.id);
 
-        // 스탯을 합칩니다: 이전 기록 -> 모달 정보 -> 최신 기록 순으로 덮어씁니다.
+        const defaultStats = {
+          points: 0,
+          assists: 0,
+          rebounds: 0,
+          steals: 0,
+          fouls: 0
+        };
+
         return {
-          ...oldStats,
+          ...defaultStats,
+          ...(oldPlayerFromMaster || {}),
           ...playerFromModal,
           ...latestStats,
         };
       });
 
-      // 3. Vue의 반응성을 위해 this.$set을 사용하여 전체 선수 명단을 업데이트합니다.
       this.$set(this.rosterPlayers, team, newMasterRoster);
-
-      // 4. 업데이트된 전체 선수 명단에서 새로 뛸 선수 목록을 생성합니다.
       this.players[team] = newMasterRoster.filter(p => p.selected).slice(0, 5);
 
       this.closeRoster();
