@@ -421,8 +421,8 @@ export default {
   computed: {
     activePlayers() {
       return {
-        Home: this.players.Home,
-        Away: this.players.Away,
+        Home: this.players.Home.sort((a, b) => a.no - b.no),
+        Away: this.players.Away.sort((a, b) => a.no - b.no),
       };
     },
   },
@@ -808,36 +808,47 @@ export default {
 
     },
 
-    saveRoster({ team, players }) {
+    saveRoster({ team, players: newRosterInfoFromModal }) {
+      // 1. 현재 뛰고 있는 선수들의 최신 스탯을 전체 선수 명단에 업데이트 (백업)
+      const currentActivePlayers = this.players[team] || [];
+      const masterRoster = this.rosterPlayers[team] || [];
 
-      this.rosterPlayers[team] = players;
+      currentActivePlayers.forEach(activePlayer => {
+        const playerInRoster = masterRoster.find(p => p.id === activePlayer.id);
+        if (playerInRoster) {
+          Object.assign(playerInRoster, activePlayer);
+        }
+      });
 
-      const selected = players.filter((p) => p.selected).slice(0, 5);
+      // 2. 모달에서 받은 새 정보로 마스터 로스터를 업데이트 (스탯은 유지)
+      const newMasterRoster = newRosterInfoFromModal.map(playerFromModal => {
+        const existingPlayer = masterRoster.find(p => p.id === playerFromModal.id);
+        if (existingPlayer) {
+          // 기존 선수는 스탯을 유지하고, 모달에서 온 정보(이름, 번호, 선택 여부)를 덮어씀
+          return {
+            ...existingPlayer,
+            ...playerFromModal,
+          };
+        } else {
+          // 새로 추가된 선수는 스탯을 0으로 초기화
+          return {
+            ...playerFromModal,
+            points: 0,
+            assists: 0,
+            rebounds: 0,
+            steals: 0,
+            fouls: 0,
+          };
+        }
+      });
 
-      this.players[team] = selected.map((p) => ({
+      this.rosterPlayers[team] = newMasterRoster;
 
-        id: p.id,
-
-        no: p.no,
-
-        name: p.name,
-
-        points: 0,
-
-        assists: 0,
-
-        rebounds: 0,
-
-        steals: 0,
-
-        fouls: 0,
-
-      }));
+      // 3. 업데이트된 마스터 로스터에서 새로 뛸 선수 목록을 생성
+      this.players[team] = newMasterRoster.filter(p => p.selected).slice(0, 5);
 
       this.closeRoster();
-
       this.syncState();
-
     },
 
     syncState() {

@@ -159,8 +159,8 @@ export default {
         p: typeof p.points === "number" ? p.points : (typeof p.p === "number" ? p.p : 0)
       });
 
-      this.homePlayers = (homePlayers || []).slice(0, 5).map(toRow);
-      this.awayPlayers = (awayPlayers || []).slice(0, 5).map(toRow);
+      this.homePlayers = (homePlayers || []).slice(0, 5).map(toRow).sort((a, b) => a.no - b.no);
+      this.awayPlayers = (awayPlayers || []).slice(0, 5).map(toRow).sort((a, b) => a.no - b.no);
     },
     updateScale() {
       const vw = window.innerWidth;
