@@ -504,7 +504,7 @@ export default {
       else if (typeof s.shotIsRunning === "boolean") this.isShotRunning = s.shotIsRunning;
       else if (typeof s.isRunningShot === "boolean") this.isShotRunning = s.isRunningShot;
       else if (typeof s.shotRunning === "boolean") this.isShotRunning = s.shotRunning;
-      
+
       if (s.gameLog) this.gameLog = s.gameLog; // <-- Apply gameLog
 
       // ✅ reset 직후 서버에서 이전 점수/파울이 다시 내려오는 경우 잠깐 무시(화면 원복 방지)
@@ -640,9 +640,8 @@ export default {
       this.pushState(ActionType.QUARTER, { quarter: nextQuarter });
     },
     changeName(teamKey, nextName) {
-      const fallback = teamKey === "Home" ? "Home" : "Away";
-      let name = String(nextName ?? "").trim() || fallback;
-      name = name.slice(0, 4);
+      let name = String(nextName ?? "").trim(); // Allow empty names
+      // Removed name.slice(0, 4) - maxlength attribute on input should handle length
       const payload = {};
       if (teamKey === "Home") {
         payload.homeName = name;
@@ -758,7 +757,7 @@ export default {
         this.addTeamScore(teamKey, -1);
 
         this.lastScoringPlayer = null;
-        
+
         // Find and remove the last score event from the log
         const lastScoreIndex = this.gameLog.slice().reverse().findIndex(e => e.type === 'SCORE' && e.team === teamKey);
         if (lastScoreIndex !== -1) {
@@ -790,7 +789,7 @@ export default {
       } else {
         this.teams.Away.awayScore = Math.max(0, this.teams.Away.awayScore - 1);
       }
-      
+
       // Log score undo
       this.gameLog.push({ type: 'SCORE', team: teamKey, points: -1, quarter: this.quarter });
 
@@ -822,7 +821,7 @@ export default {
       this.isPlayerSelectMode = false;
       this.pointsToAdd = 0;
       this.scoreTargetTeam = null; // Reset score target after scoring
-      
+
       // <-- Log Score Event
       this.gameLog.push({ type: 'SCORE', team: teamKey, points: points_to_add, quarter: this.quarter });
 
@@ -976,7 +975,7 @@ export default {
 
 
         awayName: this.teams.Away.awayName,
-        
+
         gameLog: this.gameLog, // <-- Sync gameLog
 
 
