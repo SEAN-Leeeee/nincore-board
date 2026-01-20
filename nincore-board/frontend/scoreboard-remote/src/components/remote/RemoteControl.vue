@@ -92,9 +92,8 @@
 
               <input
                   class="rc-input"
-                  :value="teams.Home.homeName"
+                  v-model="homeName"
                   placeholder="Home"
-                  @change="changeName('Home', $event.target.value)"
                   maxlength="4"
               />
               <div class="rc-team__scoretext">{{ teams.Home.homeScore }}</div>
@@ -217,9 +216,8 @@
             <div class="rc-team__header">
               <input
                   class="rc-input"
-                  :value="teams.Away.awayName"
+                  v-model="awayName"
                   placeholder="Away"
-                  @change="changeName('Away', $event.target.value)"
                   maxlength="4"
               />
               <div class="rc-team__scoretext">{{ teams.Away.awayScore }}</div>
@@ -435,17 +433,35 @@ export default {
         Away: this.players.Away.sort((a, b) => a.no - b.no),
       };
     },
+    homeName: {
+      get() {
+        return this.teams.Home.homeName;
+      },
+      set(newValue) {
+        this.teams.Home.homeName = newValue;
+        this.changeName('Home', newValue);
+      }
+    },
+    awayName: {
+      get() {
+        return this.teams.Away.awayName;
+      },
+      set(newValue) {
+        this.teams.Away.awayName = newValue;
+        this.changeName('Away', newValue);
+      }
+    },
     currentGameState() {
       return {
         home: {
           name: this.teams.Home.homeName,
           foul: this.teams.Home.homeFoul,
-          players: this.activePlayers.Home,
+          players: this.rosterPlayers.Home, // Use rosterPlayers for the report
         },
         away: {
           name: this.teams.Away.awayName,
           foul: this.teams.Away.awayFoul,
-          players: this.activePlayers.Away,
+          players: this.rosterPlayers.Away, // Use rosterPlayers for the report
         },
         quarter: this.quarter,
         gameClock: this.gameClockSec,
