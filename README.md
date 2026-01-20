@@ -20,3 +20,4 @@ www.nincoreboard.cloud
 
 <img width="1073" height="601" alt="Screenshot 2026-01-14 at 8 49 31 PM" src="https://github.com/user-attachments/assets/195f5190-f6df-4cf4-ae19-50d714d2e9a4" />
 <img width="1073" height="601" alt="Screenshot 2026-01-14 at 9 31 05 PM" src="https://github.com/user-attachments/assets/222fcf41-1721-404f-9b36-dbdf43334d51" />
+<img width="1852" height="1007" alt="image" src="https://github.com/user-attachments/assets/9ad7198f-5750-4a2f-81a3-58378781c469" />
