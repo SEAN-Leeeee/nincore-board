@@ -648,7 +648,7 @@ export default {
       } else {
         payload.awayName = name;
       }
-      const action = teamKey === "Home" ? ActionType.HOME_NAME : ActionType.AWAY_NAME;
+      const action = "STATE_UPDATE";
       this.pushState(action, payload);
     },
     addTeamScore(teamKey, delta) {
