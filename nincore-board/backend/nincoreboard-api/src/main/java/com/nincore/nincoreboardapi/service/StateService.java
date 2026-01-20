@@ -124,7 +124,7 @@ public class StateService {
     public void scheduleSessionCleanup(Integer boardSessionId) {
         cancelSessionCleanup(boardSessionId);
 
-        log.info("Scheduling cleanup for BoardSession ID: {} in 5 minutes.", boardSessionId);
+        log.info("Scheduling cleanup for BoardSession ID: {} in 30 minutes.", boardSessionId);
         Runnable cleanupTask = () -> {
             log.info("Executing cleanup for BoardSession ID: {}.", boardSessionId);
             removeSessionState(boardSessionId);
@@ -132,7 +132,7 @@ public class StateService {
             cleanupTasks.remove(boardSessionId);
         };
 
-        ScheduledFuture<?> scheduledTask = scheduler.schedule(cleanupTask, 5, TimeUnit.MINUTES);
+        ScheduledFuture<?> scheduledTask = scheduler.schedule(cleanupTask, 30, TimeUnit.MINUTES);
         cleanupTasks.put(boardSessionId, scheduledTask);
     }
 

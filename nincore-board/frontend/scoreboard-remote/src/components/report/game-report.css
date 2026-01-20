@@ -1,0 +1,231 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+.game-report-container {
+    color: #2D3748; /* Darker text color */
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 15px rgba(0,0,0,0.05);
+}
+
+.report-header {
+    text-align: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.report-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #2D3748; /* Darker header text */
+}
+
+.print-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background-color 0.3s;
+}
+
+.print-button:hover {
+    background-color: #0056b3;
+}
+
+.game-details {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.team-info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.team-name {
+    padding: 0 20px;
+    text-transform: uppercase;
+}
+
+.final-score {
+    padding: 5px 15px;
+    background-color: #2D3748; /* Darker background */
+    color: #fff;
+    border-radius: 5px;
+}
+
+.game-meta {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #666;
+}
+
+.team-stats-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.team-sheet {
+    border: 1px solid #A0AEC0; /* Darker border */
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.team-sheet h2 {
+    font-size: 20px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.player-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+
+.player-stats-table th,
+.player-stats-table td {
+    border: 1px solid #CBD5E0; /* Darker border */
+    padding: 8px;
+    text-align: left;
+}
+
+.player-stats-table thead {
+    background-color: #E2E8F0; /* Darker shade */
+    font-weight: 700;
+    color: #2D3748;
+}
+
+.player-stats-table td:nth-child(1), /* # */
+.player-stats-table td:nth-child(3), /* PTS */
+.player-stats-table td:nth-child(4), /* AST */
+.player-stats-table td:nth-child(5), /* REB */
+.player-stats-table td:nth-child(6), /* STL */
+.player-stats-table td:nth-child(7) { /* FLS */
+    text-align: center;
+}
+
+
+.team-summary {
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    font-size: 14px;
+}
+.team-summary p {
+    margin: 5px 0;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 12px;
+    color: #888;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+/* Print-specific styles for A4 */
+@media print {
+    body {
+        background-color: #fff;
+        font-size: 10pt; /* Reduce base font size for print */
+    }
+
+    .report-modal-overlay {
+        background: none;
+    }
+
+    .game-report-container {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border: none;
+        box-shadow: none;
+        color: #000;
+    }
+
+    .report-header, .team-sheet, .quarterly-summary {
+        border-top: 1px solid #000;
+        border-bottom: 1px solid #000;
+        padding: 0.5rem 0;
+        margin-bottom: 1rem;
+    }
+    
+    .report-header {
+        border-top: none;
+    }
+
+    .report-header h1 {
+        font-size: 16pt;
+        margin-bottom: 0.5rem;
+    }
+    
+    .team-info {
+        font-size: 14pt;
+    }
+
+    .print-button, .report-modal-close-btn {
+        display: none;
+    }
+
+    .team-stats-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        font-size: 9pt;
+    }
+
+    .player-stats-table th,
+    .player-stats-table td {
+        padding: 4px; /* Reduce padding in table cells */
+        border: 1px solid #ccc;
+    }
+
+    .player-stats-table thead {
+        background-color: #eee !important; /* Ensure override */
+        -webkit-print-color-adjust: exact; /* Force background color printing in Chrome/Safari */
+        color-adjust: exact;
+    }
+
+    .final-score, .player-stats-table thead {
+        color: #000 !important; /* Ensure text is black */
+    }
+    
+    .final-score {
+         border: 1px solid #000;
+         background: #eee !important;
+    }
+}
+
+.quarterly-summary {
+    margin-top: 30px;
+    border-top: 2px solid #333;
+    padding-top: 20px;
+}
+.quarterly-summary h2 {
+    font-size: 20px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+}
+.quarterly-summary td:first-child {
+    font-weight: bold;
+}
+

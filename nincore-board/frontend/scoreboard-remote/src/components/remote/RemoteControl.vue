@@ -7,6 +7,7 @@
             <div class="rc-time-header__main">경기 리모컨</div>
             <div>
               <button class="rc-btn rc-btn--ghost" @click="resetAll">리셋</button>
+              <button class="rc-btn rc-btn--info" @click="openReportModal">기록</button>
               <button class="rc-btn rc-btn--danger" @click="shutdownSession">종료</button>
             </div>
           </div>
@@ -20,7 +21,7 @@
 
               <div class="rc-time-cell rc-time-cell--mid rc-time-cell--center">
                 <span class="rc-time-label">전체 시간</span>
-                <button class="rc-time-click" @click="openTimeModal">
+                <button class="rc-time-click" @click="openTimeModal" :disabled="isGameRunning">
                   <span class="rc-time-value rc-time-value--accent">{{ formatMMSS(gameClockSec) }}</span>
                 </button>
               </div>
@@ -374,6 +375,12 @@
         @close="closeRoster"
         @save="saveRoster"
     />
+
+    <ReportModal
+        v-if="isReportModalVisible"
+        :gameState="currentGameState"
+        @close="closeReportModal"
+    />
   </div>
 </template>
 
@@ -383,12 +390,13 @@ import "./remote-control.css";
 import { ActionType } from "@/shared/actionTypes";
 import { subscribeState, loadState, publishState } from "@/shared/stateChannel";
 import RosterModal from "@/components/remote/RosterModal.vue";
+import ReportModal from "@/components/report/ReportModal.vue";
 
 const NINCORE_BOARD_STATE = "nincore-board-state";
 
 export default {
   name: "RemoteControl",
-  components: { RosterModal },
+  components: { RosterModal, ReportModal },
   data() {
     return {
       quarter: 1,
@@ -416,6 +424,8 @@ export default {
       scoreTargetTeam: null,
       isScoreUndoSelectMode: false,
       scoreUndoTargetTeam: null,
+      isReportModalVisible: false,
+      gameLog: [], // <-- Add gameLog
     };
   },
   computed: {
@@ -423,6 +433,23 @@ export default {
       return {
         Home: this.players.Home.sort((a, b) => a.no - b.no),
         Away: this.players.Away.sort((a, b) => a.no - b.no),
+      };
+    },
+    currentGameState() {
+      return {
+        home: {
+          name: this.teams.Home.homeName,
+          foul: this.teams.Home.homeFoul,
+          players: this.activePlayers.Home,
+        },
+        away: {
+          name: this.teams.Away.awayName,
+          foul: this.teams.Away.awayFoul,
+          players: this.activePlayers.Away,
+        },
+        quarter: this.quarter,
+        gameClock: this.gameClockSec,
+        gameLog: this.gameLog, // <-- Pass gameLog
       };
     },
   },
@@ -439,6 +466,12 @@ export default {
     }
   },
   methods: {
+    openReportModal() {
+      this.isReportModalVisible = true;
+    },
+    closeReportModal() {
+      this.isReportModalVisible = false;
+    },
     applyStateToView(s) {
       const sessionId = sessionStorage.getItem("sessionId");
 
@@ -455,6 +488,8 @@ export default {
       else if (typeof s.shotIsRunning === "boolean") this.isShotRunning = s.shotIsRunning;
       else if (typeof s.isRunningShot === "boolean") this.isShotRunning = s.isRunningShot;
       else if (typeof s.shotRunning === "boolean") this.isShotRunning = s.shotRunning;
+      
+      if (s.gameLog) this.gameLog = s.gameLog; // <-- Apply gameLog
 
       // ✅ reset 직후 서버에서 이전 점수/파울이 다시 내려오는 경우 잠깐 무시(화면 원복 방지)
       const inResetGuard = Date.now() < (this.resetGuardUntil || 0);
@@ -518,6 +553,7 @@ export default {
       this.lastScoringPlayer = null;
       this.isScoreUndoSelectMode = false;
       this.scoreUndoTargetTeam = null;
+      this.gameLog = []; // <-- Reset gameLog
 
       this.gameClockSec = this.strictGameTime;
       this.shotClockSec = 24;
@@ -578,6 +614,7 @@ export default {
           rosterPlayers: this.rosterPlayers,
           homeName: this.teams.Home.homeName,
           awayName: this.teams.Away.awayName,
+          gameLog: this.gameLog,
         });
       }
     },
@@ -654,6 +691,11 @@ export default {
 
       if (!p) return;
 
+      // <-- Log Foul Event
+      if (delta > 0) {
+          this.gameLog.push({ type: 'FOUL', team: teamKey, quarter: this.quarter });
+      }
+
       p.fouls = Math.max(0, (p.fouls || 0) + delta);
       this.recalculateTeamFouls(teamKey);
       this.isFoulSelectMode = false;
@@ -678,7 +720,7 @@ export default {
       }
 
       // 기본 모드: 기존처럼 개인 파울 +1
-
+      this.gameLog.push({ type: 'FOUL', team: teamKey, quarter: this.quarter });
       this.addPlayerStat(teamKey, playerId, "fouls", 1);
 
     },
@@ -700,6 +742,12 @@ export default {
         this.addTeamScore(teamKey, -1);
 
         this.lastScoringPlayer = null;
+        
+        // Find and remove the last score event from the log
+        const lastScoreIndex = this.gameLog.slice().reverse().findIndex(e => e.type === 'SCORE' && e.team === teamKey);
+        if (lastScoreIndex !== -1) {
+            this.gameLog.splice(this.gameLog.length - 1 - lastScoreIndex, 1);
+        }
 
       }
 
@@ -726,6 +774,9 @@ export default {
       } else {
         this.teams.Away.awayScore = Math.max(0, this.teams.Away.awayScore - 1);
       }
+      
+      // Log score undo
+      this.gameLog.push({ type: 'SCORE', team: teamKey, points: -1, quarter: this.quarter });
 
       this.isScoreUndoSelectMode = false;
       this.scoreUndoTargetTeam = null;
@@ -755,6 +806,9 @@ export default {
       this.isPlayerSelectMode = false;
       this.pointsToAdd = 0;
       this.scoreTargetTeam = null; // Reset score target after scoring
+      
+      // <-- Log Score Event
+      this.gameLog.push({ type: 'SCORE', team: teamKey, points: points_to_add, quarter: this.quarter });
 
       // 1. Update local player points
       p.points = Math.max(0, (p.points || 0) + points_to_add);
@@ -906,6 +960,8 @@ export default {
 
 
         awayName: this.teams.Away.awayName,
+        
+        gameLog: this.gameLog, // <-- Sync gameLog
 
 
 
@@ -1002,6 +1058,7 @@ export default {
       const ss = parseInt(this.timeModal.ss, 10);
       if (Number.isNaN(mm) || Number.isNaN(ss)) return;
       this.strictGameTime = mm * 60 + ss;
+      this.gameClockSec = this.strictGameTime; // Ensure immediate display update
       const safeSs = Math.min(59, Math.max(0, ss));
       const total = Math.max(0, mm * 60 + safeSs);
       const payload = { isReset: true, resetTime: total };
