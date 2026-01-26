@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GameState {
     private int sessionId;
+    private String ip;
+    private String password;
     private int quarter;
     private int gameTime;
     private boolean isGameRunning;

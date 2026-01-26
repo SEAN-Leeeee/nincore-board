@@ -71,6 +71,10 @@ public class StateService {
 
         String destination = "/subscribe/state/" + sessionId;
         newState.setSessionId(sessionId);
+        sessionService.getBoardSession((long) sessionId).ifPresent(boardSession -> {
+            newState.setIp(boardSession.getIp());
+            newState.setPassword(boardSession.getPassword());
+        });
         if ("QUARTER".equals((cmd.getType()))) {
             newState.setQuarter(cmd.getPayload());
             newState.setHomeFoul(0);

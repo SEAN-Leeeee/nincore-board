@@ -1,21 +1,23 @@
 <template>
-  <div class="login-container">
-    <div class="login-box">
-      <h2 class="title">Scoreboard Access</h2>
-      <form @submit.prevent="login">
-        <div class="input-group">
-          <label for="ip-address">ID (IP Address)</label>
-          <input type="text" id="ip-address" v-model="ip" />
-        </div>
-        <div class="input-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" v-model="password" required placeholder="Enter your password" />
-        </div>
-        <button type="submit" class="login-button" :disabled="loading">
-          {{ loading ? 'Connecting...' : 'Login' }}
-        </button>
-        <p v-if="error" class="error-message">{{ error }}</p>
-      </form>
+  <div class="login-view">
+    <div class="login-container">
+      <div class="login-box">
+        <h2 class="title">즐코어보드 접속하기</h2>
+        <form @submit.prevent="login">
+          <div class="input-group">
+            <label for="ip-address">ID (IP는 변경 가능합니다.)</label>
+            <input type="text" id="ip-address" v-model="ip" />
+          </div>
+          <div class="input-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" v-model="password" required placeholder="Enter your password" />
+          </div>
+          <button type="submit" class="login-button" :disabled="loading">
+            {{ loading ? 'Connecting...' : 'Login' }}
+          </button>
+          <p v-if="error" class="error-message">{{ error }}</p>
+        </form>
+      </div>
     </div>
   </div>
 </template>
@@ -25,6 +27,9 @@ import '@/assets/css/login.css';
 
 export default {
   name: 'LoginComponent',
+  components: {
+    // No background component
+  },
   data() {
     return {
       ip: '',
@@ -69,30 +74,24 @@ export default {
 
 
         console.log(response)
-        // 백엔드로부터 { sessionId, isNewSession } 형태의 응답을 받음
         const result = await response.json();
 
-        // [수정] 서버로부터 받은 sessionId가 유효한지 확인합니다.
         if (!result || !result.sessionId) {
           this.error = "로그인 실패: 서버로부터 유효하지 않은 세션 ID를 받았습니다.";
           console.error("Invalid login response:", result);
-          return; // 페이지 이동을 막습니다.
+          return;
         }
 
-        // 이제 비밀번호 대신 고유 ID인 sessionId를 저장합니다.
         sessionStorage.setItem('sessionId', result.sessionId);
 
         if (result.isNewSession) {
-          // [수정] 새 세션인 경우, localStorage의 이전 상태를 삭제합니다.
           localStorage.removeItem("nincore-board-state");
-          // 새 세션이면 remote로 접속
           this.$router.push({ name: 'Remote', params: { sessionId: result.sessionId } });
         } else {
-          // 기존 세션이 있으면 display로 접속
           this.$router.push({ name: 'Display', params: { sessionId: result.sessionId } });
         }
       } catch (error) {
-        this.error = error.message;
+        this.error = 'Login error: ' + error.message;
         console.error('Login error:', error);
       } finally {
         this.loading = false;
@@ -101,3 +100,23 @@ export default {
   },
 };
 </script>
+
+<style>
+/* 등장 애니메이션을 login-container에 직접 적용 */
+.login-container {
+  animation: fade-in-up 1s ease-out forwards;
+  animation-delay: 0.5s;
+  opacity: 0;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

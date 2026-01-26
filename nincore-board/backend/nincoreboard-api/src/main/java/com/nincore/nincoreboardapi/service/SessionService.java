@@ -53,4 +53,9 @@ public class SessionService {
     public boolean isSessionActive(Long sessionId) {
         return boardSessionRepository.findByIdAndIsDeletedFalse(sessionId).isPresent();
     }
+
+    @Transactional(readOnly = true)
+    public Optional<BoardSession> getBoardSession(Long id) {
+        return boardSessionRepository.findById(id);
+    }
 }

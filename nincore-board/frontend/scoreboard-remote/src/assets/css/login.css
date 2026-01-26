@@ -4,7 +4,7 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: 'Roboto', sans-serif;
-  background-color: #f0f2f5;
+  background-color: #000;
 }
 
 #app, .login-view {
@@ -13,6 +13,9 @@ html, body {
   align-items: center;
   height: 100%;
   width: 100%;
+  background-image: url('../images/background.png');
+  background-size: cover;
+  background-position: center;
 }
 
 .login-container {
@@ -23,10 +26,13 @@ html, body {
 }
 
 .login-box {
-  background: white;
+  background: rgba(255, 255, 255, 0.85);
   padding: 40px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   width: 100%;
   max-width: 400px;
   text-align: center;

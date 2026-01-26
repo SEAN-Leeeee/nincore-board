@@ -5,6 +5,7 @@
         <div class="rc-card rc-time-card">
           <div class="rc-time-header">
             <div class="rc-time-header__main">경기 리모컨</div>
+<!--            <div class="rc-time-header__main">경기 리모컨 IP: PASSWORD:</div>-->
             <div>
               <button class="rc-btn rc-btn--ghost" @click="resetAll">리셋</button>
               <button class="rc-btn rc-btn--info" @click="openReportModal">기록</button>
@@ -470,6 +471,8 @@ export default {
     },
   },
   mounted() {
+    console.log(sessionStorage.getItem());
+    console.log(sessionStorage);
     this.unsubscribe = subscribeState(this.applyStateToView);
     const initialState = loadState();
     if (initialState) {
@@ -505,9 +508,8 @@ export default {
       else if (typeof s.isRunningShot === "boolean") this.isShotRunning = s.isRunningShot;
       else if (typeof s.shotRunning === "boolean") this.isShotRunning = s.shotRunning;
 
-      if (s.gameLog) this.gameLog = s.gameLog; // <-- Apply gameLog
+      if (s.gameLog) this.gameLog = s.gameLog;
 
-      // ✅ reset 직후 서버에서 이전 점수/파울이 다시 내려오는 경우 잠깐 무시(화면 원복 방지)
       const inResetGuard = Date.now() < (this.resetGuardUntil || 0);
       if (!inResetGuard) {
         if (s.homeScore !== undefined) this.teams.Home.homeScore = s.homeScore;
@@ -515,7 +517,6 @@ export default {
         if (s.awayScore !== undefined) this.teams.Away.awayScore = s.awayScore;
         if (s.awayFoul !== undefined) this.teams.Away.awayFoul = s.awayFoul;
       } else {
-        // guard 중에는 0으로 유지
         if (s.homeName !== undefined) this.teams.Home.homeName = s.homeName;
         if (s.awayName !== undefined) this.teams.Away.awayName = s.awayName;
       }
