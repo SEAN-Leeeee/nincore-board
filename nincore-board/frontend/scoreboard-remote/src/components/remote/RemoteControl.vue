@@ -5,7 +5,8 @@
         <div class="rc-card rc-time-card">
           <div class="rc-time-header">
             <div class="rc-time-header__main">경기 리모컨</div>
-<!--            <div class="rc-time-header__main">경기 리모컨 IP: PASSWORD:</div>-->
+            <div class="rc-time-header__main">접속 IP: {{ connectedIp }}</div>
+            <div class="rc-time-header__main">접속 PASSWORD: {{ sessionPassword }}</div>
             <div>
               <button class="rc-btn rc-btn--ghost" @click="resetAll">리셋</button>
               <button class="rc-btn rc-btn--info" @click="openReportModal">기록</button>
@@ -425,6 +426,8 @@ export default {
       scoreUndoTargetTeam: null,
       isReportModalVisible: false,
       gameLog: [], // <-- Add gameLog
+      connectedIp: '',
+      sessionPassword: '',
     };
   },
   computed: {
@@ -471,7 +474,7 @@ export default {
     },
   },
   mounted() {
-    console.log(sessionStorage.getItem());
+    // console.log(sessionStorage.getItem()); // Removed problematic line
     console.log(sessionStorage);
     this.unsubscribe = subscribeState(this.applyStateToView);
     const initialState = loadState();
@@ -495,6 +498,10 @@ export default {
       const sessionId = sessionStorage.getItem("sessionId");
 
       if (!s || sessionId != s.sessionId) return;
+
+      if (typeof s.ip === "string") this.connectedIp = s.ip;
+      if (typeof s.password === "string") this.sessionPassword = s.password;
+
       if (typeof s.quarter === "number") this.quarter = s.quarter;
       if (typeof s.gameTime === "number") this.gameClockSec = s.gameTime;
       if (typeof s.shotClock === "number") this.shotClockSec = s.shotClock;

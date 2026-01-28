@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.sentry.Sentry;
+
 @Service
 @Slf4j
 public class StateService {
@@ -69,6 +71,8 @@ public class StateService {
 
         GameState newState = stateRef.get();
 
+
+
         String destination = "/subscribe/state/" + sessionId;
         newState.setSessionId(sessionId);
         sessionService.getBoardSession((long) sessionId).ifPresent(boardSession -> {
@@ -80,6 +84,7 @@ public class StateService {
             newState.setHomeFoul(0);
             newState.setAwayFoul(0);
         } else {
+
             log.debug("CMD = " + cmd.getType() + ", payload=" + cmd.getPayload());
 
             switch (cmd.getType()) {

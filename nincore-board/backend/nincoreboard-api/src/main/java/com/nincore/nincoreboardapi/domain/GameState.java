@@ -58,6 +58,14 @@ public class GameState {
         this.sessionId = sessionId;
     }
 
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public void setGameTime(JsonNode payload) {
         this.isGameRunning = payload.get("isRunning").asBoolean();
         if (payload.get("isReset").asBoolean()) {
