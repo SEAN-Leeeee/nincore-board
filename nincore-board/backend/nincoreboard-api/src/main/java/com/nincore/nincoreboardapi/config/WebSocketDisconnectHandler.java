@@ -32,21 +32,21 @@ public class WebSocketDisconnectHandler implements ApplicationListener<SessionDi
 
         Integer boardSessionId = webSocketSessionRegistry.getBoardSessionId(webSocketSessionId);
 
-        if (boardSessionId != null) {
-            log.info("Found BoardSession {} associated with the disconnected WebSocket session. Cleaning up.", boardSessionId);
-
-            stateService.scheduleSessionCleanup(boardSessionId);
-            log.info("Scheduled cleanup for BoardSession ID: {} on WebSocket disconnect.", boardSessionId);
-
-            String destination = "/subscribe/session/" + boardSessionId;
-            messagingTemplate.convertAndSend(destination, "{\"status\":\"TERMINATED\"}");
-            log.info("Sent TERMINATED signal to destination: {}", destination);
-
-            webSocketSessionRegistry.unregisterSession(webSocketSessionId);
-            log.info("Unregistered WebSocket session {}.", webSocketSessionId);
-        } else {
-            log.warn("Disconnected WebSocket session {} was not associated with any BoardSession. No cleanup performed.", webSocketSessionId);
-        }
+//        if (boardSessionId != null) {
+//            log.info("Found BoardSession {} associated with the disconnected WebSocket session. Cleaning up.", boardSessionId);
+//
+//            stateService.scheduleSessionCleanup(boardSessionId);
+//            log.info("Scheduled cleanup for BoardSession ID: {} on WebSocket disconnect.", boardSessionId);
+//
+//            String destination = "/subscribe/session/" + boardSessionId;
+//            messagingTemplate.convertAndSend(destination, "{\"status\":\"TERMINATED\"}");
+//            log.info("Sent TERMINATED signal to destination: {}", destination);
+//
+//            webSocketSessionRegistry.unregisterSession(webSocketSessionId);
+//            log.info("Unregistered WebSocket session {}.", webSocketSessionId);
+//        } else {
+//            log.warn("Disconnected WebSocket session {} was not associated with any BoardSession. No cleanup performed.", webSocketSessionId);
+//        }
 
     }
 }

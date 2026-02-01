@@ -927,121 +927,46 @@ export default {
     },
 
     syncState() {
-
-
-
       const fullState = {
-
-
-
         quarter: this.quarter,
-
-
-
         gameTime: this.gameClockSec,
-
-
-
         shotClock: this.shotClockSec,
-
-
-
         isGameRunning: this.isGameRunning,
-
-
-
         isShotRunning: this.isShotRunning,
-
-
-
         homeScore: this.teams.Home.homeScore,
-
-
-
         homeFoul: this.teams.Home.homeFoul,
-
-
-
         awayScore: this.teams.Away.awayScore,
-
-
-
         awayFoul: this.teams.Away.awayFoul,
-
-
-
         players: this.players,
-
-
-
         rosterPlayers: this.rosterPlayers,
-
-
-
         homeName: this.teams.Home.homeName,
-
-
-
         awayName: this.teams.Away.awayName,
-
         gameLog: this.gameLog, // <-- Sync gameLog
-
-
-
       };
-
-
-
-      // 1. Persist locally and inform other tabs
-
       publishState(fullState);
-
-
-
-      // 2. Inform the backend
-
       this.pushState(ActionType.STATE_UPDATE, fullState);
-
     },
 
     recalculateTeamFouls(teamKey) {
-
       const teamPlayers = this.players[teamKey] || [];
-
       let totalFouls = 0;
-
       for (const p of teamPlayers) {
-
         totalFouls += (p.fouls || 0);
-
       }
-
-      // Cap team fouls at 5
 
       const cappedFouls = Math.min(5, totalFouls);
-
-
-
       if (teamKey === 'Home') {
-
         this.teams.Home.homeFoul = cappedFouls;
-
       } else {
-
         this.teams.Away.awayFoul = cappedFouls;
-
       }
-
     },
-
-            toggleGameClock() {
-      // ✅ UI 즉시 반응(정지/시작 토글) + 서버/WS는 동기화 용도
+    toggleGameClock() {
       const next = !this.isGameRunning;
       this.isGameRunning = next;
       this.pushState(ActionType.TOGGLE_GAME_TIME, { isRunning: next });
     },
     toggleShotClock() {
-      // ✅ UI 즉시 반응(정지/시작 토글) + 서버/WS는 동기화 용도
       const next = !this.isShotRunning;
       this.isShotRunning = next;
       this.pushState(ActionType.TOGGLE_SHOT_CLOCK, { isRunning: next });
