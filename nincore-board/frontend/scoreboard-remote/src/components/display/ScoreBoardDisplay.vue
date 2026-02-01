@@ -119,11 +119,19 @@ export default {
     this.updateScale();
     window.addEventListener("resize", this.updateScale, { passive: true });
 
-    // BroadcastChannel을 직접 생성하여 핸들러 등록
     try {
       this._bc = new BroadcastChannel(CHANNEL);
       this._onMsg = (ev) => {
-        if (!ev || !ev.data || ev.data.type !== "STATE") return;
+        if (!ev || !ev.data) return;
+
+        if (ev.data.type === "SHUTDOWN") {
+          sessionStorage.clear();
+          localStorage.removeItem("nincore_scoreboard_state_v1");
+          window.location.href = "/";
+          return;
+        }
+
+        if (ev.data.type !== "STATE") return;
         this.applyStateToView(ev.data.payload);
       };
       this._bc.addEventListener("message", this._onMsg);
@@ -131,7 +139,6 @@ export default {
       console.error("BroadcastChannel 생성 실패:", e);
     }
 
-    // localStorage에서 초기 상태 로드
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -192,3 +199,4 @@ export default {
   }
 };
 </script>
+c

@@ -456,20 +456,27 @@ export default {
       }
     },
     currentGameState() {
+      const homePlayers = (this.players.Home || []).map(p => ({ ...p }));
+      const awayPlayers = (this.players.Away || []).map(p => ({ ...p }));
+      const log = this.gameLog.map(e => ({ ...e }));
+
       return {
         home: {
           name: this.teams.Home.homeName,
+          score: this.teams.Home.homeScore,
           foul: this.teams.Home.homeFoul,
-          players: this.rosterPlayers.Home, // Use rosterPlayers for the report
+          players: homePlayers,
         },
         away: {
           name: this.teams.Away.awayName,
+          score: this.teams.Away.awayScore,
           foul: this.teams.Away.awayFoul,
-          players: this.rosterPlayers.Away, // Use rosterPlayers for the report
+          players: awayPlayers,
         },
         quarter: this.quarter,
         gameClock: this.gameClockSec,
-        gameLog: this.gameLog, // <-- Pass gameLog
+        shotClock: this.shotClockSec,
+        gameLog: log,
       };
     },
   },
@@ -480,6 +487,8 @@ export default {
     if (initialState) {
       this.applyStateToView(initialState);
     }
+    this.connectedIp = initialState.ip;
+    this.sessionPassword = initialState.password;
   },
   beforeDestroy() {
     if (this.unsubscribe) {
@@ -496,9 +505,6 @@ export default {
     applyStateToView(s) {
       const sessionId = sessionStorage.getItem("sessionId");
       if (!s || sessionId != s.sessionId) return;
-
-      if (typeof s.ip === "string") this.connectedIp = s.ip;
-      if (typeof s.password === "string") this.sessionPassword = s.password;
 
       if (typeof s.quarter === "number") this.quarter = s.quarter;
       if (typeof s.gameTime === "number") this.gameClockSec = s.gameTime;
@@ -576,7 +582,7 @@ export default {
       this.lastScoringPlayer = null;
       this.isScoreUndoSelectMode = false;
       this.scoreUndoTargetTeam = null;
-      this.gameLog = []; // <-- Reset gameLog
+      this.gameLog = [];
 
       this.gameClockSec = this.strictGameTime;
       this.shotClockSec = 24;
@@ -587,14 +593,14 @@ export default {
       this.teams.Away.awayFoul = 0;
 
       const resetStats = (list) =>
-        (list || []).map((p) => ({
-          ...p,
-          points: 0,
-          assists: 0,
-          rebounds: 0,
-          steals: 0,
-          fouls: 0,
-        }));
+          (list || []).map((p) => ({
+            ...p,
+            points: 0,
+            assists: 0,
+            rebounds: 0,
+            steals: 0,
+            fouls: 0,
+          }));
       this.players = {
         Home: resetStats(this.players.Home),
         Away: resetStats(this.players.Away),
@@ -647,8 +653,7 @@ export default {
       this.pushState(ActionType.QUARTER, { quarter: nextQuarter });
     },
     changeName(teamKey, nextName) {
-      let name = String(nextName ?? "").trim(); // Allow empty names
-      // Removed name.slice(0, 4) - maxlength attribute on input should handle length
+      let name = String(nextName ?? "").trim();
       const payload = {};
       if (teamKey === "Home") {
         payload.homeName = name;
@@ -677,14 +682,14 @@ export default {
 
       this.isPlayerSelectMode = true;
       this.pointsToAdd = points;
-      this.scoreTargetTeam = teamKey; // Set the target team for scoring
+      this.scoreTargetTeam = teamKey;
     },
     startFoulSelection(teamKey, delta) {
       if (teamKey !== "Home" && teamKey !== "Away") return;
       if (delta !== 1 && delta !== -1) return;
       this.isPlayerSelectMode = false;
       this.pointsToAdd = 0;
-      this.scoreTargetTeam = null; // Clear score target when starting foul selection
+      this.scoreTargetTeam = null;
       this.isScoreUndoSelectMode = false;
       this.scoreUndoTargetTeam = null;
 
@@ -698,24 +703,19 @@ export default {
       this.foulTargetTeam = teamKey;
       this.foulDeltaToAdd = delta;
     },
-
     confirmPlayerFoul(teamKey, playerId) {
-
       if (!this.isFoulSelectMode) return;
       if (this.foulTargetTeam !== teamKey) return;
 
       const delta = this.foulDeltaToAdd;
-
       if (delta !== 1 && delta !== -1) return;
 
       const list = this.players[teamKey] || [];
       const p = list.find((x) => x.id === playerId);
-
       if (!p) return;
 
-      // <-- Log Foul Event
       if (delta > 0) {
-          this.gameLog.push({ type: 'FOUL', team: teamKey, quarter: this.quarter });
+        this.gameLog.push({ type: 'FOUL', team: teamKey, quarter: this.quarter });
       }
 
       p.fouls = Math.max(0, (p.fouls || 0) + delta);
@@ -724,57 +724,34 @@ export default {
       this.foulTargetTeam = null;
       this.foulDeltaToAdd = 0;
       this.syncState();
-
     },
-
-
-
     onPlayerFoulClick(teamKey, playerId) {
-
-      // 파울 선택 모드면 '선수 선택 확정'
-
       if (this.isFoulSelectMode && this.foulTargetTeam === teamKey) {
-
         this.confirmPlayerFoul(teamKey, playerId);
-
         return;
-
       }
 
-      // 기본 모드: 기존처럼 개인 파울 +1
       this.gameLog.push({ type: 'FOUL', team: teamKey, quarter: this.quarter });
       this.addPlayerStat(teamKey, playerId, "fouls", 1);
-
     },
-
     undoLastScore() {
-
       if (!this.lastScoringPlayer) return;
 
       const { teamKey, playerId } = this.lastScoringPlayer;
-
       const list = this.players[teamKey];
-
       const p = list.find((x) => x.id === playerId);
 
       if (p) {
-
         p.points = Math.max(0, (p.points || 0) - 1);
-
         this.addTeamScore(teamKey, -1);
-
         this.lastScoringPlayer = null;
 
-        // Find and remove the last score event from the log
         const lastScoreIndex = this.gameLog.slice().reverse().findIndex(e => e.type === 'SCORE' && e.team === teamKey);
         if (lastScoreIndex !== -1) {
-            this.gameLog.splice(this.gameLog.length - 1 - lastScoreIndex, 1);
+          this.gameLog.splice(this.gameLog.length - 1 - lastScoreIndex, 1);
         }
-
       }
-
     },
-
     onPlayerScoreButtonClick(teamKey, playerId) {
       if (this.isPlayerSelectMode && this.scoreTargetTeam === teamKey) {
         this.confirmPlayerScore(teamKey, playerId);
@@ -782,11 +759,9 @@ export default {
         this.confirmScoreUndo(teamKey, playerId);
       }
     },
-
     confirmScoreUndo(teamKey, playerId) {
       const list = this.players[teamKey] || [];
       const p = list.find((x) => x.id === playerId);
-
       if (!p || p.points <= 0) return;
 
       p.points = (p.points || 0) - 1;
@@ -797,14 +772,12 @@ export default {
         this.teams.Away.awayScore = Math.max(0, this.teams.Away.awayScore - 1);
       }
 
-      // Log score undo
       this.gameLog.push({ type: 'SCORE', team: teamKey, points: -1, quarter: this.quarter });
 
       this.isScoreUndoSelectMode = false;
       this.scoreUndoTargetTeam = null;
       this.syncState();
     },
-
     startScoreUndoSelection(teamKey) {
       this.isPlayerSelectMode = false;
       this.pointsToAdd = 0;
@@ -816,9 +789,8 @@ export default {
       this.isScoreUndoSelectMode = true;
       this.scoreUndoTargetTeam = teamKey;
     },
-
     confirmPlayerScore(teamKey, playerId) {
-      if (!this.isPlayerSelectMode || this.scoreTargetTeam !== teamKey) return; // Added check for scoreTargetTeam
+      if (!this.isPlayerSelectMode || this.scoreTargetTeam !== teamKey) return;
 
       const list = this.players[teamKey];
       const p = list.find((x) => x.id === playerId);
@@ -827,15 +799,12 @@ export default {
       const points_to_add = this.pointsToAdd;
       this.isPlayerSelectMode = false;
       this.pointsToAdd = 0;
-      this.scoreTargetTeam = null; // Reset score target after scoring
+      this.scoreTargetTeam = null;
 
-      // <-- Log Score Event
       this.gameLog.push({ type: 'SCORE', team: teamKey, points: points_to_add, quarter: this.quarter });
 
-      // 1. Update local player points
       p.points = Math.max(0, (p.points || 0) + points_to_add);
 
-      // 2. Update local team score
       if (teamKey === 'Home') {
         this.teams.Home.homeScore += points_to_add;
       } else {
@@ -843,47 +812,29 @@ export default {
       }
 
       this.lastScoringPlayer = { teamKey, playerId, points: points_to_add };
-
-      // 3. Sync everything
       this.syncState();
     },
-
     addPlayerStat(teamKey, playerId, field, delta) {
-
       const list = this.players[teamKey];
-
       const p = list.find((x) => x.id === playerId);
-
       if (!p) return;
 
       p[field] = Math.max(0, (p[field] || 0) + delta);
 
       if (field === 'fouls') {
-
         this.recalculateTeamFouls(teamKey);
-
       }
 
       this.syncState();
-
     },
-
     openRoster(teamKey) {
-
       if (teamKey !== "Home" && teamKey !== "Away") return;
-
       this.rosterModal.team = teamKey;
-
       this.rosterModal.open = true;
-
     },
-
     closeRoster() {
-
       this.rosterModal.open = false;
-
     },
-
     saveRoster({ team, players: newRosterInfoFromModal }) {
       const currentActivePlayers = this.players[team] || [];
 
@@ -924,7 +875,6 @@ export default {
       this.closeRoster();
       this.syncState();
     },
-
     syncState() {
       const fullState = {
         quarter: this.quarter,
@@ -940,12 +890,11 @@ export default {
         rosterPlayers: this.rosterPlayers,
         homeName: this.teams.Home.homeName,
         awayName: this.teams.Away.awayName,
-        gameLog: this.gameLog, // <-- Sync gameLog
+        gameLog: this.gameLog,
       };
       publishState(fullState);
       this.pushState(ActionType.STATE_UPDATE, fullState);
     },
-
     recalculateTeamFouls(teamKey) {
       const teamPlayers = this.players[teamKey] || [];
       let totalFouls = 0;
@@ -1005,7 +954,7 @@ export default {
       const ss = parseInt(this.timeModal.ss, 10);
       if (Number.isNaN(mm) || Number.isNaN(ss)) return;
       this.strictGameTime = mm * 60 + ss;
-      this.gameClockSec = this.strictGameTime; // Ensure immediate display update
+      this.gameClockSec = this.strictGameTime;
       const safeSs = Math.min(59, Math.max(0, ss));
       const total = Math.max(0, mm * 60 + safeSs);
       const payload = { isReset: true, resetTime: total };
@@ -1018,8 +967,9 @@ export default {
       const s = safe % 60;
       return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
     },
+    // ─── 세션 종료 ─────────────────────────────────────────────────
     shutdownSession() {
-      if (confirm("세션을 완전히 종료하시겠습니까? 디스플레이 화면도 꺼집니다.")) {
+      if (confirm("게임을 종료하시겠습니까?")) {
         const sessionId = sessionStorage.getItem("sessionId");
         if (!sessionId) return;
 
@@ -1028,24 +978,31 @@ export default {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId: sessionId })
         })
-        .then(response => {
-          if (response.ok) {
-            console.log("Session shutdown successfully.");
-            disconnectWS(); // 서버에서 성공적으로 처리 후 클라이언트 측 연결 끊기
-            this.$router.push('/'); // 로그인 페이지로 이동
-          } else {
-            console.error("Failed to shut down session on server.");
-            // 서버에서 실패해도 일단 클라이언트 측 연결은 끊고 리디렉션
-            disconnectWS();
-            this.$router.push('/');
-          }
-        })
-        .catch(error => {
-          console.error("Error during session shutdown:", error);
-          // 에러 발생 시에도 일단 클라이언트 측 연결은 끊고 리디렉션
-          disconnectWS();
-          this.$router.push('/');
-        });
+            .then(response => {
+              // 서버 응답과 무관하게 종료 신호를 보내고 이동
+              this.broadcastShutdown();
+              disconnectWS();
+              sessionStorage.clear();
+              window.location.href = "/";
+            })
+            .catch(error => {
+              console.error("Error during session shutdown:", error);
+              // 서버 통신 실패해도 클라이언트 종료 진행
+              this.broadcastShutdown();
+              disconnectWS();
+              sessionStorage.clear();
+              window.location.href = "/";
+            });
+      }
+    },
+    // Display에 종료 신호를 전달
+    broadcastShutdown() {
+      try {
+        const bc = new BroadcastChannel("nincore-scoreboard");
+        bc.postMessage({ type: "SHUTDOWN" });
+        bc.close();
+      } catch (e) {
+        console.warn("BroadcastChannel shutdown signal failed:", e);
       }
     },
   },
@@ -1055,7 +1012,7 @@ export default {
 <style scoped>
 .blinking-effect {
   animation: blink 1s ease-in-out infinite;
-  box-shadow: 0 0 8px 2px rgba(255, 215, 0, 0.8); /* Gold glow */
+  box-shadow: 0 0 8px 2px rgba(255, 215, 0, 0.8);
   border-radius: 4px;
   transition: box-shadow 0.3s ease;
 }

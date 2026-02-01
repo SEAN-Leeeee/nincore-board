@@ -45,8 +45,7 @@
           </tbody>
         </table>
         <div class="team-summary">
-          <p><strong>Team Fouls:</strong> {{ gameState.home.foul }}</p>
-          <p><strong>Timeouts Left:</strong> {{ gameState.home.timeout }}</p>
+<!--          -->
         </div>
       </div>
 
@@ -78,8 +77,7 @@
           </tbody>
         </table>
         <div class="team-summary">
-          <p><strong>Team Fouls:</strong> {{ gameState.away.foul }}</p>
-          <p><strong>Timeouts Left:</strong> {{ gameState.away.timeout }}</p>
+<!--          -->
         </div>
       </div>
     </div>
@@ -136,6 +134,9 @@ export default {
       })
     }
   },
+  // mounted() {
+  //   // alert(this.gameState.home.players[4].points);
+  // },
   computed: {
     homePlayers() {
       return (this.gameState.home.players || []).slice().sort((a, b) => (a.no || 0) - (b.no || 0));
@@ -151,7 +152,7 @@ export default {
     allQuarters() {
       const quartersInLog = new Set(this.gameState.gameLog.map(e => e.quarter));
       const maxQuarter = Math.max(1, this.gameState.quarter, ...quartersInLog); // Ensure at least 1, and consider current quarter
-      
+
       const allQuarters = new Set();
       for (let i = 1; i <= maxQuarter; i++) {
         allQuarters.add(i);
@@ -193,14 +194,14 @@ export default {
   methods: {
     async downloadPdf() {
       const reportElement = this.$el; // The root element of the component
-      
+
       // Temporarily hide the print button for the screenshot
       const printButton = reportElement.querySelector('.print-button');
       if (printButton) printButton.style.display = 'none';
 
       try {
         const targetCaptureWidthPx = 780; // Example target pixel width for capture, adjust as needed.
-        
+
         const canvas = await html2canvas(reportElement, {
             scale: 2, // Higher scale for better resolution
             useCORS: true, // Important for images, fonts
@@ -238,7 +239,7 @@ export default {
 
             // Calculate the Y position to draw the image on the current page.
             // It's a negative offset of what's already rendered, plus the top margin for each new page.
-            const yPositionOnPage = -heightRendered + marginY; 
+            const yPositionOnPage = -heightRendered + marginY;
 
             pdf.addImage(
                 imgData,
@@ -248,12 +249,12 @@ export default {
                 imgDisplayWidth,
                 imgDisplayHeight
             );
-            
+
             // Advance the heightRendered by the usable height of a PDF page
             heightRendered += (pdfHeight - (2 * marginY)); // Usable page height for content
             pageNumber++;
         }
-        
+
         // --- Blob-based download workaround ---
         const pdfBlob = pdf.output('blob');
         const pdfUrl = URL.createObjectURL(pdfBlob);

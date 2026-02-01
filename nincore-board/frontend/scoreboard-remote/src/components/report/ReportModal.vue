@@ -25,6 +25,10 @@ export default {
       required: true,
     },
   },
+  mounted() {
+    alert(this.gameState.home.players[0].points);
+
+  },
   methods: {
     close() {
       this.$emit('close');

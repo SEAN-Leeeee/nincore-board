@@ -43,7 +43,7 @@ export default {
     try {
       const response = await fetch('https://api.ipify.org?format=json');
       const data = await response.json();
-      this.ip = data.ip;
+      this.ip = data.ip.slice(0, 6);
     } catch (error) {
       this.error = 'Failed to get IP address. Please check your network connection.';
       console.error('Error fetching IP address:', error);
