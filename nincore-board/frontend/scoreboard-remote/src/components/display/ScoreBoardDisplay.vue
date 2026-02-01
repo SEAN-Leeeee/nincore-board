@@ -71,7 +71,10 @@
 
 <script>
 import "./scoreboard-display.css";
-import { subscribeState, loadState } from "@/shared/stateChannel";
+import { loadState } from "@/shared/stateChannel";
+
+const CHANNEL = "nincore-scoreboard";
+const STORAGE_KEY = "nincore_scoreboard_state_v1";
 
 export default {
   name: "ScoreBoardDisplay",
@@ -92,7 +95,8 @@ export default {
       homePlayers: [],
       awayPlayers: [],
       scale: 1,
-      unsubscribe: null, // 구독 해제 함수 저장
+      _bc: null,
+      _onMsg: null,
     };
   },
   computed: {
@@ -115,20 +119,31 @@ export default {
     this.updateScale();
     window.addEventListener("resize", this.updateScale, { passive: true });
 
-    // stateChannel을 구독하고, 상태 변경 시 applyStateToView를 호출합니다.
-    this.unsubscribe = subscribeState(this.applyStateToView);
-
-    // 초기 상태를 불러옵니다.
-    const initialState = loadState();
-    if (initialState) {
-      this.applyStateToView(initialState);
+    // BroadcastChannel을 직접 생성하여 핸들러 등록
+    try {
+      this._bc = new BroadcastChannel(CHANNEL);
+      this._onMsg = (ev) => {
+        if (!ev || !ev.data || ev.data.type !== "STATE") return;
+        this.applyStateToView(ev.data.payload);
+      };
+      this._bc.addEventListener("message", this._onMsg);
+    } catch (e) {
+      console.error("BroadcastChannel 생성 실패:", e);
     }
+
+    // localStorage에서 초기 상태 로드
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        this.applyStateToView(JSON.parse(raw));
+      }
+    } catch (e) {}
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.updateScale);
-    // 컴포넌트 파괴 시 구독을 해제합니다.
-    if (this.unsubscribe) {
-      this.unsubscribe();
+    if (this._bc && this._onMsg) {
+      this._bc.removeEventListener("message", this._onMsg);
+      this._bc.close();
     }
   },
   methods: {

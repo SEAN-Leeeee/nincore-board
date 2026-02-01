@@ -4,9 +4,9 @@
       <section class="rc-row rc-row--time">
         <div class="rc-card rc-time-card">
           <div class="rc-time-header">
-            <div class="rc-time-header__main">경기 리모컨</div>
-            <div class="rc-time-header__main">접속 IP: {{ connectedIp }}</div>
-            <div class="rc-time-header__main">접속 PASSWORD: {{ sessionPassword }}</div>
+            <div class="rc-time-header__main">리모컨</div>
+            <div class="rc-time-header__main">IP: {{ connectedIp }}</div>
+            <div class="rc-time-header__main">비밀번호: {{ sessionPassword }}</div>
             <div>
               <button class="rc-btn rc-btn--ghost" @click="resetAll">리셋</button>
               <button class="rc-btn rc-btn--info" @click="openReportModal">기록</button>
@@ -425,7 +425,7 @@ export default {
       isScoreUndoSelectMode: false,
       scoreUndoTargetTeam: null,
       isReportModalVisible: false,
-      gameLog: [], // <-- Add gameLog
+      gameLog: [],
       connectedIp: '',
       sessionPassword: '',
     };
@@ -474,7 +474,6 @@ export default {
     },
   },
   mounted() {
-    // console.log(sessionStorage.getItem()); // Removed problematic line
     console.log(sessionStorage);
     this.unsubscribe = subscribeState(this.applyStateToView);
     const initialState = loadState();
@@ -496,7 +495,6 @@ export default {
     },
     applyStateToView(s) {
       const sessionId = sessionStorage.getItem("sessionId");
-
       if (!s || sessionId != s.sessionId) return;
 
       if (typeof s.ip === "string") this.connectedIp = s.ip;
@@ -505,6 +503,7 @@ export default {
       if (typeof s.quarter === "number") this.quarter = s.quarter;
       if (typeof s.gameTime === "number") this.gameClockSec = s.gameTime;
       if (typeof s.shotClock === "number") this.shotClockSec = s.shotClock;
+
       if (typeof s.isGameRunning === "boolean") this.isGameRunning = s.isGameRunning;
       else if (typeof s.gameIsRunning === "boolean") this.isGameRunning = s.gameIsRunning;
       else if (typeof s.isRunningGame === "boolean") this.isGameRunning = s.isRunningGame;
