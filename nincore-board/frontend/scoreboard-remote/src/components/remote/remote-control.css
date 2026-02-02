@@ -53,7 +53,7 @@ body,
 }
 
 .rc-row--team {
-    grid-template-columns: 0.8fr 2fr;
+    grid-template-columns: 0.9fr 2fr; /* Reverted to original */
 }
 
 .rc-card {
@@ -122,6 +122,11 @@ body,
     padding: 6px 9px;
 }
 
+.rc-btn--score-tiny {
+    padding: 5px 17px;
+    font-size: 12px;
+}
+
 .rc-btn--mini2 {
     padding: 6px 9px;
     border-radius: 10px;
@@ -138,7 +143,7 @@ body,
 
 /* ===== 입력 ===== */
 .rc-input {
-    width: 100%;
+    width: 70%;
     border: 1px solid var(--line);
     background: rgba(255, 255, 255, 0.04);
     color: var(--text);
@@ -273,9 +278,8 @@ body,
 }
 
 .rc-team__header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px;
+    display: flex; /* Change to flexbox for better alignment */
+    gap: 4px; /* Add a small gap between items */
     align-items: center;
     margin-bottom: 8px;
 }
@@ -294,11 +298,13 @@ body,
     background: rgba(0, 0, 0, 0.14);
     padding: 8px;
     overflow: hidden;
+    width: 85%; /* Adjust width to 85% */
 }
 
 .rc-team__meta-row {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start; /* Align items to the start */
+    gap: 4px; /* Add a small gap between label and value */
     align-items: center;
     margin-bottom: 8px;
 }
@@ -325,6 +331,7 @@ body,
     display: grid;
     grid-template-rows: auto auto;
     gap: 10px;
+    width: 95%; /* Reduce width by 5% */
 }
 
 .rc-score-2rows {
@@ -334,14 +341,13 @@ body,
 }
 
 .rc-score-2rows__row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
+    display: flex;
+    gap: 0px; /* Ensure no gap */
+    justify-content: flex-start; /* Align to start */
 }
 
 .rc-btn-row {
     display: flex;
-    gap: 6px;
     flex-wrap: wrap;
 }
 
@@ -604,6 +610,16 @@ body,
     min-height: 0 !important;
     padding-bottom: 10px !important; /* ✅ 하단 여백도 살짝 줄임(원하면 6~12로 조절) */
 }
+
+/*.rc-card.rc-card--fill-players {*/
+/*    flex: 0 0 auto !important;  !* ✅ 더 이상 남는 공간을 채우지 않게 *!*/
+/*    height: auto !important;*/
+/*    min-height: 0 !important;*/
+/*    padding-bottom: 10px !important; !* ✅ 하단 여백도 살짝 줄임(원하면 6~12로 조절) *!*/
+/*    width: 100%*/
+
+/*}*/
+
 .rc-body,
 .rc-teams {
     flex: 1 1 auto;
@@ -644,7 +660,8 @@ body {
 /* 시간 카드: 내용만큼만 + 하단 여백 줄이기 */
 .rc-card.rc-time-card {
     padding: 10px 12px 0px !important; /* 하단 줄임 */
-    margin: 0 !important;
+    /*margin: 0 !important;*/
+    margin-top: 50px;
     height: auto !important;
     min-height: 0 !important;
 }

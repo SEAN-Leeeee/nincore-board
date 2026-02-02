@@ -94,27 +94,24 @@
 
               <input
                   class="rc-input"
-                  v-model="homeName"
                   placeholder="Home"
                   maxlength="4"
               />
               <div class="rc-team__scoretext">{{ teams.Home.homeScore }}</div>
             </div>
 
-            <div class="rc-team__onebox">
-
               <div class="rc-team__controls-row">
                 <div>
                   <div class="rc-mini-title">득점</div>
                   <div class="rc-score-2rows">
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Home', 1)" :disabled="activePlayers.Home.length === 0">+1</button>
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Home', 2)" :disabled="activePlayers.Home.length === 0">+2</button>
+                      <button class="rc-btn rc-btn--score-tiny" @click="startPlayerSelection('Home', 1)" :disabled="activePlayers.Home.length === 0">+1</button>
+                      <button class="rc-btn rc-btn--score-tiny" @click="startPlayerSelection('Home', 2)" :disabled="activePlayers.Home.length === 0">+2</button>
                     </div>
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Home', 3)" :disabled="activePlayers.Home.length === 0">+3</button>
+                      <button class="rc-btn rc-btn--score-tiny" @click="startPlayerSelection('Home', 3)" :disabled="activePlayers.Home.length === 0">+3</button>
                       <button
-                          class="rc-btn rc-btn--pill rc-btn--ghost"
+                          class="rc-btn rc-btn--score-tiny rc-btn--ghost"
                           @click="startScoreUndoSelection('Home')"
                           :disabled="teams.Home.homeScore <= 0 || activePlayers.Home.length === 0"
                       >
@@ -130,21 +127,28 @@
                     <div class="rc-meta-label">팀 파울</div>
                     <div class="rc-meta-value">{{ teams.Home.homeFoul }}</div>
                   </div>
-                  <div class="rc-btn-row">
-                    <button class="rc-btn rc-btn--pill"
-                            @click="startFoulSelection('Home', 1)"
-                            :disabled="activePlayers.Home.length === 0">+1</button>
-                    <button
-                        class="rc-btn rc-btn--pill rc-btn--ghost"
-                        @click="startFoulSelection('Home', -1)"
-                        :disabled="teams.Home.homeFoul <= 0 || activePlayers.Home.length === 0"
-                    >
-                      -1
-                    </button>
+
+
+                  <div class="rc-btn-row rc-btn-row--stat-adjust">
+                    <div class="rc-btn-row">
+                      <button class="rc-btn rc-btn--mini"
+                              @click="addTeamFoul('Home', -1)"
+                              :disabled="teams.Home.homeFoul <= 0 || activePlayers.Home.length === 0">파울-1</button>
+                      <button class="rc-btn rc-btn--mini"
+                              @click="addTeamStat('Home', 'assists', -1)"
+                              :disabled="teams.Home.homeAssists <= 0">어시-1</button>
+                    </div>
+                    <div class="rc-btn-row">
+                      <button class="rc-btn rc-btn--mini"
+                              @click="addTeamStat('Home', 'rebounds', -1)"
+                              :disabled="teams.Home.homeRebounds <= 0">리바-1</button>
+                      <button class="rc-btn rc-btn--mini"
+                              @click="addTeamStat('Home', 'steals', -1)"
+                              :disabled="teams.Home.homeSteals <= 0">스틸-1</button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
           </div>
         </div>
 
@@ -196,11 +200,9 @@
                   <div class="rc-num">{{ p.fouls }}</div>
                   <button
                       class="rc-plus"
-                      :class="{ 'blinking-effect': isFoulSelectMode && foulTargetTeam === 'Home' }"
                       @click="onPlayerFoulClick('Home', p.id)"
-                      :disabled="!(isFoulSelectMode && foulTargetTeam === 'Home' && (foulDeltaToAdd !== -1 || p.fouls > 0))"
                   >
-                    {{ (isFoulSelectMode && foulTargetTeam === 'Home') ? '파울' : '+1' }}
+                    +1
                   </button>
                 </div>
               </div>
@@ -218,28 +220,24 @@
             <div class="rc-team__header">
               <input
                   class="rc-input"
-                  v-model="awayName"
                   placeholder="Away"
                   maxlength="4"
               />
               <div class="rc-team__scoretext">{{ teams.Away.awayScore }}</div>
             </div>
 
-            <div class="rc-team__onebox">
-
-
               <div class="rc-team__controls-row">
                 <div>
                   <div class="rc-mini-title">득점</div>
                   <div class="rc-score-2rows">
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Away', 1)" :disabled="activePlayers.Away.length === 0">+1</button>
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Away', 2)" :disabled="activePlayers.Away.length === 0">+2</button>
+                      <button class="rc-btn rc-btn--score-tiny" @click="startPlayerSelection('Away', 1)" :disabled="activePlayers.Away.length === 0">+1</button>
+                      <button class="rc-btn rc-btn--score-tiny" @click="startPlayerSelection('Away', 2)" :disabled="activePlayers.Away.length === 0">+2</button>
                     </div>
                     <div class="rc-score-2rows__row">
-                      <button class="rc-btn rc-btn--pill" @click="startPlayerSelection('Away', 3)" :disabled="activePlayers.Away.length === 0">+3</button>
+                      <button class="rc-btn rc-btn--score-tiny" @click="startPlayerSelection('Away', 3)" :disabled="activePlayers.Away.length === 0">+3</button>
                       <button
-                          class="rc-btn rc-btn--pill rc-btn--ghost"
+                          class="rc-btn rc-btn--score-tiny rc-btn--ghost"
                           @click="startScoreUndoSelection('Away')"
                           :disabled="teams.Away.awayScore <= 0 || activePlayers.Away.length === 0"
                       >
@@ -254,22 +252,28 @@
                     <div class="rc-meta-label">팀 파울</div>
                     <div class="rc-meta-value">{{ teams.Away.awayFoul }}</div>
                   </div>
-                  <div class="rc-btn-row">
-                    <button class="rc-btn rc-btn--pill"
-                            @click="startFoulSelection('Away', 1)"
-                            :disabled="activePlayers.Away.length === 0">+1</button>
 
-                    <button
-                        class="rc-btn rc-btn--pill rc-btn--ghost"
-                        @click="startFoulSelection('Away', -1)"
-                        :disabled="teams.Away.awayFoul <= 0 || activePlayers.Away.length === 0"
-                    >
-                      -1
-                    </button>
+
+                  <div class="rc-btn-row rc-btn-row--stat-adjust">
+                    <div class="rc-btn-row">
+                      <button class="rc-btn rc-btn--mini"
+                              @click="addTeamFoul('Away', -1)"
+                              :disabled="teams.Away.awayFoul <= 0 || activePlayers.Away.length === 0">파울-1</button>
+                      <button class="rc-btn rc-btn--mini"
+                              @click="addTeamStat('Away', 'assists', -1)"
+                              :disabled="teams.Away.awayAssists <= 0">어시-1</button>
+                    </div>
+                    <div class="rc-btn-row">
+                      <button class="rc-btn rc-btn--mini"
+                              @click="addTeamStat('Away', 'rebounds', -1)"
+                              :disabled="teams.Away.awayRebounds <= 0">리바-1</button>
+                      <button class="rc-btn rc-btn--mini"
+                              @click="addTeamStat('Away', 'steals', -1)"
+                              :disabled="teams.Away.awaySteals <= 0">스틸-1</button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
           </div>
         </div>
 
@@ -321,11 +325,9 @@
                   <div class="rc-num">{{ p.fouls }}</div>
                   <button
                       class="rc-plus"
-                      :class="{ 'blinking-effect': isFoulSelectMode && foulTargetTeam === 'Away' }"
                       @click="onPlayerFoulClick('Away', p.id)"
-                      :disabled="!(isFoulSelectMode && foulTargetTeam === 'Away' && (foulDeltaToAdd !== -1 || p.fouls > 0))"
                   >
-                    {{ (isFoulSelectMode && foulTargetTeam === 'Away') ? '파울' : '+1' }}
+                    +1
                   </button>
                 </div>
               </div>
@@ -401,8 +403,8 @@ export default {
     return {
       quarter: 1,
       teams: {
-        Home: { homeName: "Home", homeScore: 0, homeFoul: 0 },
-        Away: { awayName: "Away", awayScore: 0, awayFoul: 0 },
+        Home: { homeName: "Home", homeScore: 0, homeFoul: 0, homeAssists: 0, homeRebounds: 0, homeSteals: 0 },
+        Away: { awayName: "Away", awayScore: 0, awayFoul: 0, awayAssists: 0, awayRebounds: 0, awaySteals: 0 },
       },
       gameClockSec: 7 * 60,
       shotClockSec: 24,
@@ -418,9 +420,6 @@ export default {
       timeModal: { open: false, mm: "10", ss: "00" },
       unsubscribe: null,
       resetGuardUntil: 0,
-      isFoulSelectMode: false,
-      foulTargetTeam: null,
-      foulDeltaToAdd: 0,
       scoreTargetTeam: null,
       isScoreUndoSelectMode: false,
       scoreUndoTargetTeam: null,
@@ -575,9 +574,6 @@ export default {
       this.isGameRunning = false;
       this.isShotRunning = false;
       this.isPlayerSelectMode = false;
-      this.isFoulSelectMode = false;
-      this.foulTargetTeam = null;
-      this.foulDeltaToAdd = 0;
       this.pointsToAdd = 0;
       this.lastScoringPlayer = null;
       this.isScoreUndoSelectMode = false;
@@ -673,10 +669,17 @@ export default {
       const action = teamKey === "Home" ? ActionType.HOME_FOUL : ActionType.AWAY_FOUL;
       this.pushState(action, payload);
     },
+    addTeamStat(teamKey, field, delta) {
+      const teamStatKey = teamKey.toLowerCase() + field; // e.g., 'homeAssists'
+      this.teams[teamKey][teamStatKey] = Math.max(0, (this.teams[teamKey][teamStatKey] || 0) + delta);
+
+      const payload = {};
+      payload[teamStatKey] = this.teams[teamKey][teamStatKey]; // Send the new team total
+      const action = "STATE_UPDATE"; // Or a more specific action if available for team stats
+
+      this.pushState(action, payload);
+    },
     startPlayerSelection(teamKey, points) {
-      this.isFoulSelectMode = false;
-      this.foulTargetTeam = null;
-      this.foulDeltaToAdd = 0;
       this.isScoreUndoSelectMode = false;
       this.scoreUndoTargetTeam = null;
 
@@ -684,53 +687,7 @@ export default {
       this.pointsToAdd = points;
       this.scoreTargetTeam = teamKey;
     },
-    startFoulSelection(teamKey, delta) {
-      if (teamKey !== "Home" && teamKey !== "Away") return;
-      if (delta !== 1 && delta !== -1) return;
-      this.isPlayerSelectMode = false;
-      this.pointsToAdd = 0;
-      this.scoreTargetTeam = null;
-      this.isScoreUndoSelectMode = false;
-      this.scoreUndoTargetTeam = null;
-
-      const currentTeamFoul = teamKey === "Home"
-          ? Number(this.teams.Home.homeFoul || 0)
-          : Number(this.teams.Away.awayFoul || 0);
-
-      if (delta === -1 && currentTeamFoul <= 0) return;
-
-      this.isFoulSelectMode = true;
-      this.foulTargetTeam = teamKey;
-      this.foulDeltaToAdd = delta;
-    },
-    confirmPlayerFoul(teamKey, playerId) {
-      if (!this.isFoulSelectMode) return;
-      if (this.foulTargetTeam !== teamKey) return;
-
-      const delta = this.foulDeltaToAdd;
-      if (delta !== 1 && delta !== -1) return;
-
-      const list = this.players[teamKey] || [];
-      const p = list.find((x) => x.id === playerId);
-      if (!p) return;
-
-      if (delta > 0) {
-        this.gameLog.push({ type: 'FOUL', team: teamKey, quarter: this.quarter });
-      }
-
-      p.fouls = Math.max(0, (p.fouls || 0) + delta);
-      this.recalculateTeamFouls(teamKey);
-      this.isFoulSelectMode = false;
-      this.foulTargetTeam = null;
-      this.foulDeltaToAdd = 0;
-      this.syncState();
-    },
     onPlayerFoulClick(teamKey, playerId) {
-      if (this.isFoulSelectMode && this.foulTargetTeam === teamKey) {
-        this.confirmPlayerFoul(teamKey, playerId);
-        return;
-      }
-
       this.gameLog.push({ type: 'FOUL', team: teamKey, quarter: this.quarter });
       this.addPlayerStat(teamKey, playerId, "fouls", 1);
     },
@@ -782,12 +739,22 @@ export default {
       this.isPlayerSelectMode = false;
       this.pointsToAdd = 0;
       this.scoreTargetTeam = null;
-      this.isFoulSelectMode = false;
-      this.foulTargetTeam = null;
-      this.foulDeltaToAdd = 0;
 
       this.isScoreUndoSelectMode = true;
       this.scoreUndoTargetTeam = teamKey;
+    },
+    confirmPlayerStatDecrement(teamKey, playerId, field) {
+      // Ensure the stat is not already zero before decrementing
+      const list = this.players[teamKey];
+      const player = list.find(p => p.id === playerId);
+      if (player && player[field] > 0) {
+        this.addPlayerStat(teamKey, playerId, field, -1);
+      }
+
+      // Clear the stat decrement mode
+      this.isStatDecrementMode = false;
+      this.statDecrementTargetTeam = null;
+      this.statDecrementTargetField = null;
     },
     confirmPlayerScore(teamKey, playerId) {
       if (!this.isPlayerSelectMode || this.scoreTargetTeam !== teamKey) return;
@@ -819,10 +786,15 @@ export default {
       const p = list.find((x) => x.id === playerId);
       if (!p) return;
 
-      p[field] = Math.max(0, (p[field] || 0) + delta);
+      const oldPlayerStat = p[field] || 0;
+      p[field] = Math.max(0, oldPlayerStat + delta);
+      const actualDelta = p[field] - oldPlayerStat; // The actual change after Math.max(0, ...)
 
       if (field === 'fouls') {
         this.recalculateTeamFouls(teamKey);
+      } else if (['assists', 'rebounds', 'steals'].includes(field)) {
+        const teamStatKey = teamKey.toLowerCase() + field; // e.g., 'homeAssists'
+        this.teams[teamKey][teamStatKey] = Math.max(0, (this.teams[teamKey][teamStatKey] || 0) + actualDelta);
       }
 
       this.syncState();
