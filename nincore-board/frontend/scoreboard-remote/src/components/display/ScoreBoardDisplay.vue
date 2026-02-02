@@ -160,8 +160,8 @@ export default {
   },
   methods: {
     applyStateToView(s) {
-      const sessionId = sessionStorage.getItem("sessionId");
-      if (!s || s.sessionId != sessionId) return;
+      // const sessionId = sessionStorage.getItem("sessionId"); // Commented out as it's no longer used for filtering initial load
+      if (!s) return; // Only check for null/undefined payload
 
       if (typeof s.quarter === "number") this.quarter = s.quarter;
       if (typeof s.gameTime === "number") this.gameClockSec = s.gameTime;
