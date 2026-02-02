@@ -1,9 +1,9 @@
 <template>
   <div class="sb-root">
-    <div class="sb-skin" :style="skinStyle">
+    <div class="sb-skin" :class="{ 'full-screen-mode': fullScreenMode }" :style="skinStyle">
       <div class="sb-bg"></div>
 
-      <section class="sb-panel sb-panel--left">
+      <section v-if="!fullScreenMode" class="sb-panel sb-panel--left">
         <div class="sb-head">
           <span class="h-no">NO</span>
           <span class="h-name">NAME</span>
@@ -48,7 +48,7 @@
         </div>
       </section>
 
-      <section class="sb-panel sb-panel--right">
+      <section v-if="!fullScreenMode" class="sb-panel sb-panel--right">
         <div class="sb-head">
           <span class="h-no">NO</span>
           <span class="h-name">NAME</span>
@@ -66,6 +66,10 @@
         </div>
       </section>
     </div>
+
+    <button @click="toggleFullScreenMode" class="full-screen-toggle-button">
+      {{ fullScreenMode ? '플레이어 보기' : '점수만 보기' }}
+    </button>
   </div>
 </template>
 
@@ -95,6 +99,7 @@ export default {
       homePlayers: [],
       awayPlayers: [],
       scale: 1,
+      fullScreenMode: false, // New data property
       _bc: null,
       _onMsg: null,
     };
@@ -187,7 +192,15 @@ export default {
     updateScale() {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const s = Math.min(vw / this.baseW, vh / this.baseH);
+
+      let s = 1;
+      if (this.fullScreenMode) {
+        // For "cover" effect, fill the screen while maintaining aspect ratio
+        s = Math.max(vw / this.baseW, vh / this.baseH);
+      } else {
+        // For "contain" effect, fit within the screen
+        s = Math.min(vw / this.baseW, vh / this.baseH);
+      }
       this.scale = Math.max(0.2, s);
     },
     mmss(sec) {
@@ -195,6 +208,11 @@ export default {
       const m = Math.floor(s / 60);
       const r = s % 60;
       return `${m}:${String(r).padStart(2, "0")}`;
+    },
+    toggleFullScreenMode() {
+      this.fullScreenMode = !this.fullScreenMode;
+      console.log('fullScreenMode toggled to:', this.fullScreenMode); // Debug log
+      this.updateScale(); // Recalculate scale after mode change
     }
   }
 };
