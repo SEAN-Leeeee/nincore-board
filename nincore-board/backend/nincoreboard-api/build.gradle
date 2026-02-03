@@ -38,25 +38,10 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     runtimeOnly 'com.h2database:h2'
-    implementation 'io.sentry:sentry-spring-boot-starter-jakarta:7.10.0'
 
 }
 
-sentry {
-    // Generates a JVM (Java, Kotlin, etc.) source bundle and uploads your source code to Sentry.
-    // This enables source context, allowing you to see your source
-    // code as part of your stack traces in Sentry.
-    includeSourceContext = true
-
-    org = "nincoreboard-api"
-    projectName = "java-spring-boot"
-    authToken = System.getenv("sntrys_eyJpYXQiOjE3Njk1ODIyMDAuMjg2MzY0LCJ1cmwiOiJodHRwczovL3NlbnRyeS5pbyIsInJlZ2lvbl91cmwiOiJodHRwczovL3VzLnNlbnRyeS5pbyIsIm9yZyI6Im5pbm5vbmcifQ")
-}
 
 tasks.named('test') {
     useJUnitPlatform()
-}
-
-tasks.named('sentryUploadSourceBundleJava') {
-    enabled = false
 }

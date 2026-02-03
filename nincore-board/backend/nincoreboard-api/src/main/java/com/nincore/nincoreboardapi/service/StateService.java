@@ -71,7 +71,7 @@ public class StateService {
         AtomicReference<GameState> stateRef = sessionStates.computeIfAbsent(sessionId, id -> new AtomicReference<>(createInitialGameState()));
 
         GameState newState = stateRef.get();
-np
+
 
 
         String destination = "/subscribe/state/" + sessionId;
