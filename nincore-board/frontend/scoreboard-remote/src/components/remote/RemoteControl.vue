@@ -96,6 +96,7 @@
                   class="rc-input"
                   placeholder="Home"
                   maxlength="4"
+                  v-model="homeName"
               />
               <div class="rc-team__scoretext">{{ teams.Home.homeScore }}</div>
             </div>
@@ -222,6 +223,7 @@
                   class="rc-input"
                   placeholder="Away"
                   maxlength="4"
+                  v-model="awayName"
               />
               <div class="rc-team__scoretext">{{ teams.Away.awayScore }}</div>
             </div>
@@ -396,42 +398,52 @@ import ReportModal from "@/components/report/ReportModal.vue";
 
 const NINCORE_BOARD_STATE = "nincore-board-state";
 
+// Simple debounce function
+function debounce(func, delay) {
+  let timeout;
+  return function(...args) {
+    const context = this;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), delay);
+  };
+}
+
 export default {
   name: "RemoteControl",
   components: { RosterModal, ReportModal },
-  data() {
-    return {
-      quarter: 1,
-      teams: {
-        Home: { homeName: "Home", homeScore: 0, homeFoul: 0, homeAssists: 0, homeRebounds: 0, homeSteals: 0 },
-        Away: { awayName: "Away", awayScore: 0, awayFoul: 0, awayAssists: 0, awayRebounds: 0, awaySteals: 0 },
-      },
-      gameClockSec: 7 * 60,
-      shotClockSec: 24,
-      isGameRunning: false,
-      isShotRunning: false,
-      isPlayerSelectMode: false,
-      pointsToAdd: 0,
-      lastScoringPlayer: null,
-      strictGameTime: 7 * 60,
-      rosterPlayers: { Home: [], Away: [] },
-      players: { Home: [], Away: [] },
-      rosterModal: { open: false, team: "Home", name: "" },
-      timeModal: { open: false, mm: "10", ss: "00" },
-      unsubscribe: null,
-      resetGuardUntil: 0,
-      scoreTargetTeam: null,
-      isScoreUndoSelectMode: false,
-      scoreUndoTargetTeam: null,
-      isReportModalVisible: false,
-      gameLog: [],
-      connectedIp: '',
-      sessionPassword: '',
-    };
-  },
-  computed: {
-    activePlayers() {
+      data() {
       return {
+        quarter: 1,
+        teams: {
+          Home: { homeName: "", homeScore: 0, homeFoul: 0, homeAssists: 0, homeRebounds: 0, homeSteals: 0 },
+          Away: { awayName: "", awayScore: 0, awayFoul: 0, awayAssists: 0, awayRebounds: 0, awaySteals: 0 },
+        },
+        gameClockSec: 7 * 60,
+        shotClockSec: 24,
+        isGameRunning: false,
+        isShotRunning: false,
+        isPlayerSelectMode: false,
+        pointsToAdd: 0,
+        lastScoringPlayer: null,
+        strictGameTime: 7 * 60,
+        rosterPlayers: { Home: [], Away: [] },
+        players: { Home: [], Away: [] },
+        rosterModal: { open: false, team: "Home", name: "" },
+        timeModal: { open: false, mm: "10", ss: "00" },
+        unsubscribe: null,
+        resetGuardUntil: 0,
+        scoreTargetTeam: null,
+        isScoreUndoSelectMode: false,
+        scoreUndoTargetTeam: null,
+        isReportModalVisible: false,
+        gameLog: [],
+              connectedIp: '',
+              sessionPassword: '',
+              debouncedSyncState: null, // Added debouncedSyncState
+              debouncedChangeName: null, // Added debouncedChangeName
+            };
+          },    computed: {
+      activePlayers() {      return {
         Home: this.players.Home.sort((a, b) => a.no - b.no),
         Away: this.players.Away.sort((a, b) => a.no - b.no),
       };
@@ -442,7 +454,7 @@ export default {
       },
       set(newValue) {
         this.teams.Home.homeName = newValue;
-        this.changeName('Home', newValue);
+        this.debouncedChangeName('Home', newValue);
       }
     },
     awayName: {
@@ -451,7 +463,7 @@ export default {
       },
       set(newValue) {
         this.teams.Away.awayName = newValue;
-        this.changeName('Away', newValue);
+        this.debouncedChangeName('Away', newValue);
       }
     },
     currentGameState() {
@@ -484,10 +496,16 @@ export default {
     this.unsubscribe = subscribeState(this.applyStateToView);
     const initialState = loadState();
     if (initialState) {
+      // Filter out default names if they are coming from a persisted state
+      if (initialState.homeName === "Home") initialState.homeName = "";
+      if (initialState.awayName === "Away") initialState.awayName = "";
+
       this.applyStateToView(initialState);
     }
     this.connectedIp = initialState.ip;
     this.sessionPassword = initialState.password;
+    this.debouncedSyncState = debounce(this.syncState, 300); // 300ms debounce
+    this.debouncedChangeName = debounce(this.changeName, 500); // Debounce team name changes for 500ms
   },
   beforeDestroy() {
     if (this.unsubscribe) {
@@ -502,8 +520,8 @@ export default {
       this.isReportModalVisible = false;
     },
     applyStateToView(s) {
-      const sessionId = sessionStorage.getItem("sessionId");
-      if (!s || sessionId != s.sessionId) return;
+      // const sessionId = sessionStorage.getItem("sessionId"); // Commented out as it's no longer used for filtering initial load
+      if (!s) return; // Only check for null/undefined payload
 
       if (typeof s.quarter === "number") this.quarter = s.quarter;
       if (typeof s.gameTime === "number") this.gameClockSec = s.gameTime;
