@@ -408,6 +408,36 @@ function debounce(func, delay) {
   };
 }
 
+const hardcodedPlayers = [
+  { no: 1, name: "윤선민" },
+  { no: 2, name: "이유지" },
+  { no: 3, name: "임지수" },
+  { no: 4, name: "이시연" },
+  { no: 5, name: "김민정" },
+  { no: 33, name: "한유정" },
+  { no: 7, name: "한지행" },
+  { no: 8, name: "이슬기" },
+  { no: 11, name: "조세핀" },
+  { no: 14, name: "최찬영" },
+  { no: 15, name: "박민영" },
+  { no: 66, name: "이담비" },
+  { no: 91, name: "박구원" },
+  { no: 0, name: "아코" },
+  { no: 0o0, name: "홍신애" },
+  { no: 99, name: "나선일" },
+  { no: 9, name: "황선오" },
+].map((p, index) => ({
+  id: `player_${p.no}_${p.name}_${Math.random().toString(36).substr(2, 9)}`, // Generate a unique ID with random suffix
+  no: p.no,
+  name: p.name,
+  selected: false, // No players selected by default
+  points: 0,
+  assists: 0,
+  rebounds: 0,
+  steals: 0,
+  fouls: 0,
+}));
+
 export default {
   name: "RemoteControl",
   components: { RosterModal, ReportModal },
@@ -491,6 +521,10 @@ export default {
       };
     },
   },
+  created() {
+    this.debouncedSyncState = debounce(this.syncState, 300); // 300ms debounce
+    this.debouncedChangeName = debounce(this.changeName, 500); // Debounce team name changes for 500ms
+  },
   mounted() {
     console.log(sessionStorage);
     this.unsubscribe = subscribeState(this.applyStateToView);
@@ -504,8 +538,15 @@ export default {
     }
     this.connectedIp = initialState.ip;
     this.sessionPassword = initialState.password;
-    this.debouncedSyncState = debounce(this.syncState, 300); // 300ms debounce
-    this.debouncedChangeName = debounce(this.changeName, 500); // Debounce team name changes for 500ms
+
+    // Hardcode players if connectedIp is "번희수"
+    if (this.connectedIp === '번희수') {
+      this.$set(this.rosterPlayers, 'Home', hardcodedPlayers.map(p => ({ ...p })));
+      this.$set(this.rosterPlayers, 'Away', hardcodedPlayers.map(p => ({ ...p })));
+      this.$set(this.players, 'Home', hardcodedPlayers.filter(p => p.selected).map(p => ({ ...p })));
+      this.$set(this.players, 'Away', hardcodedPlayers.filter(p => p.selected).map(p => ({ ...p })));
+      this.syncState();
+    }
   },
   beforeDestroy() {
     if (this.unsubscribe) {
