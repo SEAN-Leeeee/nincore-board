@@ -133,18 +133,18 @@
                   <div class="rc-btn-row rc-btn-row--stat-adjust">
                     <div class="rc-btn-row">
                       <button class="rc-btn rc-btn--mini"
-                              @click="addTeamFoul('Home', -1)"
-                              :disabled="teams.Home.homeFoul <= 0 || activePlayers.Home.length === 0">파울-1</button>
+                              @click="startStatUndoSelection('Home', 'fouls')"
+                              :disabled="teams.Home.homeFoul <= 0">파울-1</button>
                       <button class="rc-btn rc-btn--mini"
-                              @click="addTeamStat('Home', 'assists', -1)"
+                              @click="startStatUndoSelection('Home', 'assists')"
                               :disabled="teams.Home.homeAssists <= 0">어시-1</button>
                     </div>
                     <div class="rc-btn-row">
                       <button class="rc-btn rc-btn--mini"
-                              @click="addTeamStat('Home', 'rebounds', -1)"
+                              @click="startStatUndoSelection('Home', 'rebounds')"
                               :disabled="teams.Home.homeRebounds <= 0">리바-1</button>
                       <button class="rc-btn rc-btn--mini"
-                              @click="addTeamStat('Home', 'steals', -1)"
+                              @click="startStatUndoSelection('Home', 'steals')"
                               :disabled="teams.Home.homeSteals <= 0">스틸-1</button>
                     </div>
                   </div>
@@ -173,6 +173,7 @@
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.points }}</div>
                   <button
+                      v-if="(isPlayerSelectMode && scoreTargetTeam === 'Home') || (isScoreUndoSelectMode && scoreUndoTargetTeam === 'Home')"
                       class="rc-plus"
                       :class="{ 'blinking-effect': (isPlayerSelectMode && scoreTargetTeam === 'Home') || (isScoreUndoSelectMode && scoreUndoTargetTeam === 'Home') }"
                       @click="onPlayerScoreButtonClick('Home', p.id)"
@@ -184,26 +185,49 @@
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.assists }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('Home', p.id, 'assists', 1)">+1</button>
+                  <button
+                      class="rc-plus"
+                      :class="{ 'blinking-effect': isStatUndoSelectMode && statUndoTargetTeam === 'Home' && statUndoField === 'assists' }"
+                      @click="onPlayerStatButtonClick('Home', p.id, 'assists')"
+                      :disabled="isStatUndoSelectMode && statUndoTargetTeam === 'Home' && statUndoField === 'assists' && p.assists <= 0"
+                  >
+                    {{ (isStatUndoSelectMode && statUndoTargetTeam === 'Home' && statUndoField === 'assists') ? '-' : '+' }}
+                  </button>
                 </div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.rebounds }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('Home', p.id, 'rebounds', 1)">+1</button>
+                  <button
+                      class="rc-plus"
+                      :class="{ 'blinking-effect': isStatUndoSelectMode && statUndoTargetTeam === 'Home' && statUndoField === 'rebounds' }"
+                      @click="onPlayerStatButtonClick('Home', p.id, 'rebounds')"
+                      :disabled="isStatUndoSelectMode && statUndoTargetTeam === 'Home' && statUndoField === 'rebounds' && p.rebounds <= 0"
+                  >
+                    {{ (isStatUndoSelectMode && statUndoTargetTeam === 'Home' && statUndoField === 'rebounds') ? '-' : '+' }}
+                  </button>
                 </div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.steals }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('Home', p.id, 'steals', 1)">+1</button>
+                  <button
+                      class="rc-plus"
+                      :class="{ 'blinking-effect': isStatUndoSelectMode && statUndoTargetTeam === 'Home' && statUndoField === 'steals' }"
+                      @click="onPlayerStatButtonClick('Home', p.id, 'steals')"
+                      :disabled="isStatUndoSelectMode && statUndoTargetTeam === 'Home' && statUndoField === 'steals' && p.steals <= 0"
+                  >
+                    {{ (isStatUndoSelectMode && statUndoTargetTeam === 'Home' && statUndoField === 'steals') ? '-' : '+' }}
+                  </button>
                 </div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.fouls }}</div>
                   <button
                       class="rc-plus"
-                      @click="onPlayerFoulClick('Home', p.id)"
+                      :class="{ 'blinking-effect': isStatUndoSelectMode && statUndoTargetTeam === 'Home' && statUndoField === 'fouls' }"
+                      @click="onPlayerStatButtonClick('Home', p.id, 'fouls')"
+                      :disabled="isStatUndoSelectMode && statUndoTargetTeam === 'Home' && statUndoField === 'fouls' && p.fouls <= 0"
                   >
-                    +1
+                    {{ (isStatUndoSelectMode && statUndoTargetTeam === 'Home' && statUndoField === 'fouls') ? '-' : '+' }}
                   </button>
                 </div>
               </div>
@@ -259,18 +283,18 @@
                   <div class="rc-btn-row rc-btn-row--stat-adjust">
                     <div class="rc-btn-row">
                       <button class="rc-btn rc-btn--mini"
-                              @click="addTeamFoul('Away', -1)"
-                              :disabled="teams.Away.awayFoul <= 0 || activePlayers.Away.length === 0">파울-1</button>
+                              @click="startStatUndoSelection('Away', 'fouls')"
+                              :disabled="teams.Away.awayFoul <= 0">파울-1</button>
                       <button class="rc-btn rc-btn--mini"
-                              @click="addTeamStat('Away', 'assists', -1)"
+                              @click="startStatUndoSelection('Away', 'assists')"
                               :disabled="teams.Away.awayAssists <= 0">어시-1</button>
                     </div>
                     <div class="rc-btn-row">
                       <button class="rc-btn rc-btn--mini"
-                              @click="addTeamStat('Away', 'rebounds', -1)"
+                              @click="startStatUndoSelection('Away', 'rebounds')"
                               :disabled="teams.Away.awayRebounds <= 0">리바-1</button>
                       <button class="rc-btn rc-btn--mini"
-                              @click="addTeamStat('Away', 'steals', -1)"
+                              @click="startStatUndoSelection('Away', 'steals')"
                               :disabled="teams.Away.awaySteals <= 0">스틸-1</button>
                     </div>
                   </div>
@@ -299,6 +323,7 @@
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.points }}</div>
                   <button
+                      v-if="(isPlayerSelectMode && scoreTargetTeam === 'Away') || (isScoreUndoSelectMode && scoreUndoTargetTeam === 'Away')"
                       class="rc-plus"
                       :class="{ 'blinking-effect': (isPlayerSelectMode && scoreTargetTeam === 'Away') || (isScoreUndoSelectMode && scoreUndoTargetTeam === 'Away') }"
                       @click="onPlayerScoreButtonClick('Away', p.id)"
@@ -310,26 +335,49 @@
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.assists }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('Away', p.id, 'assists', 1)">+1</button>
+                  <button
+                      class="rc-plus"
+                      :class="{ 'blinking-effect': isStatUndoSelectMode && statUndoTargetTeam === 'Away' && statUndoField === 'assists' }"
+                      @click="onPlayerStatButtonClick('Away', p.id, 'assists')"
+                      :disabled="isStatUndoSelectMode && statUndoTargetTeam === 'Away' && statUndoField === 'assists' && p.assists <= 0"
+                  >
+                    {{ (isStatUndoSelectMode && statUndoTargetTeam === 'Away' && statUndoField === 'assists') ? '-' : '+' }}
+                  </button>
                 </div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.rebounds }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('Away', p.id, 'rebounds', 1)">+1</button>
+                  <button
+                      class="rc-plus"
+                      :class="{ 'blinking-effect': isStatUndoSelectMode && statUndoTargetTeam === 'Away' && statUndoField === 'rebounds' }"
+                      @click="onPlayerStatButtonClick('Away', p.id, 'rebounds')"
+                      :disabled="isStatUndoSelectMode && statUndoTargetTeam === 'Away' && statUndoField === 'rebounds' && p.rebounds <= 0"
+                  >
+                    {{ (isStatUndoSelectMode && statUndoTargetTeam === 'Away' && statUndoField === 'rebounds') ? '-' : '+' }}
+                  </button>
                 </div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.steals }}</div>
-                  <button class="rc-plus" @click="addPlayerStat('Away', p.id, 'steals', 1)">+1</button>
+                  <button
+                      class="rc-plus"
+                      :class="{ 'blinking-effect': isStatUndoSelectMode && statUndoTargetTeam === 'Away' && statUndoField === 'steals' }"
+                      @click="onPlayerStatButtonClick('Away', p.id, 'steals')"
+                      :disabled="isStatUndoSelectMode && statUndoTargetTeam === 'Away' && statUndoField === 'steals' && p.steals <= 0"
+                  >
+                    {{ (isStatUndoSelectMode && statUndoTargetTeam === 'Away' && statUndoField === 'steals') ? '-' : '+' }}
+                  </button>
                 </div>
 
                 <div class="rc-statcell">
                   <div class="rc-num">{{ p.fouls }}</div>
                   <button
                       class="rc-plus"
-                      @click="onPlayerFoulClick('Away', p.id)"
+                      :class="{ 'blinking-effect': isStatUndoSelectMode && statUndoTargetTeam === 'Away' && statUndoField === 'fouls' }"
+                      @click="onPlayerStatButtonClick('Away', p.id, 'fouls')"
+                      :disabled="isStatUndoSelectMode && statUndoTargetTeam === 'Away' && statUndoField === 'fouls' && p.fouls <= 0"
                   >
-                    +1
+                    {{ (isStatUndoSelectMode && statUndoTargetTeam === 'Away' && statUndoField === 'fouls') ? '-' : '+' }}
                   </button>
                 </div>
               </div>
@@ -467,12 +515,16 @@ export default {
         scoreUndoTargetTeam: null,
         isReportModalVisible: false,
         gameLog: [],
-              connectedIp: '',
-              sessionPassword: '',
-              debouncedSyncState: null, // Added debouncedSyncState
-              debouncedChangeName: null, // Added debouncedChangeName
-            };
-          },    computed: {
+        connectedIp: '',
+        sessionPassword: '',
+        debouncedSyncState: null, // Added debouncedSyncState
+        debouncedChangeName: null, // Added debouncedChangeName
+        isStatUndoSelectMode: false,
+        statUndoTargetTeam: null,
+        statUndoField: null,
+      };
+    },
+    computed: {
       activePlayers() {      return {
         Home: this.players.Home.sort((a, b) => a.no - b.no),
         Away: this.players.Away.sort((a, b) => a.no - b.no),
@@ -638,6 +690,10 @@ export default {
       this.isScoreUndoSelectMode = false;
       this.scoreUndoTargetTeam = null;
       this.gameLog = [];
+      
+      this.isStatUndoSelectMode = false;
+      this.statUndoTargetTeam = null;
+      this.statUndoField = null;
 
       this.gameClockSec = this.strictGameTime;
       this.shotClockSec = 24;
@@ -741,13 +797,15 @@ export default {
     startPlayerSelection(teamKey, points) {
       this.isScoreUndoSelectMode = false;
       this.scoreUndoTargetTeam = null;
+      this.isStatUndoSelectMode = false;
+      this.statUndoTargetTeam = null;
+      this.statUndoField = null;
 
       this.isPlayerSelectMode = true;
       this.pointsToAdd = points;
       this.scoreTargetTeam = teamKey;
     },
     onPlayerFoulClick(teamKey, playerId) {
-      this.gameLog.push({ type: 'FOUL', team: teamKey, quarter: this.quarter });
       this.addPlayerStat(teamKey, playerId, "fouls", 1);
     },
     undoLastScore() {
@@ -798,6 +856,9 @@ export default {
       this.isPlayerSelectMode = false;
       this.pointsToAdd = 0;
       this.scoreTargetTeam = null;
+      this.isStatUndoSelectMode = false;
+      this.statUndoTargetTeam = null;
+      this.statUndoField = null;
 
       this.isScoreUndoSelectMode = true;
       this.scoreUndoTargetTeam = teamKey;
@@ -846,17 +907,49 @@ export default {
       if (!p) return;
 
       const oldPlayerStat = p[field] || 0;
-      p[field] = Math.max(0, oldPlayerStat + delta);
-      const actualDelta = p[field] - oldPlayerStat; // The actual change after Math.max(0, ...)
+      const newPlayerStat = Math.max(0, oldPlayerStat + delta);
+      p[field] = newPlayerStat;
+
+      const actualDelta = newPlayerStat - oldPlayerStat;
 
       if (field === 'fouls') {
         this.recalculateTeamFouls(teamKey);
       } else if (['assists', 'rebounds', 'steals'].includes(field)) {
-        const teamStatKey = teamKey.toLowerCase() + field; // e.g., 'homeAssists'
+        const capitalizedField = field.charAt(0).toUpperCase() + field.slice(1);
+        const teamStatKey = teamKey.toLowerCase() + capitalizedField;
         this.teams[teamKey][teamStatKey] = Math.max(0, (this.teams[teamKey][teamStatKey] || 0) + actualDelta);
+      }
+      
+      if (delta > 0) {
+          this.gameLog.push({ type: field.toUpperCase(), team: teamKey, playerId: playerId, quarter: this.quarter });
       }
 
       this.syncState();
+    },
+    startStatUndoSelection(teamKey, field) {
+      this.isPlayerSelectMode = false;
+      this.pointsToAdd = 0;
+      this.scoreTargetTeam = null;
+      this.isScoreUndoSelectMode = false;
+      this.scoreUndoTargetTeam = null;
+      
+      this.isStatUndoSelectMode = true;
+      this.statUndoTargetTeam = teamKey;
+      this.statUndoField = field;
+    },
+    onPlayerStatButtonClick(teamKey, playerId, field) {
+      if (this.isStatUndoSelectMode && this.statUndoTargetTeam === teamKey && this.statUndoField === field) {
+        this.confirmStatUndo(teamKey, playerId, field);
+      } else {
+        this.addPlayerStat(teamKey, playerId, field, 1);
+      }
+    },
+    confirmStatUndo(teamKey, playerId, field) {
+      this.addPlayerStat(teamKey, playerId, field, -1);
+      
+      this.isStatUndoSelectMode = false;
+      this.statUndoTargetTeam = null;
+      this.statUndoField = null;
     },
     openRoster(teamKey) {
       if (teamKey !== "Home" && teamKey !== "Away") return;
@@ -933,11 +1026,10 @@ export default {
         totalFouls += (p.fouls || 0);
       }
 
-      const cappedFouls = Math.min(5, totalFouls);
       if (teamKey === 'Home') {
-        this.teams.Home.homeFoul = cappedFouls;
+        this.teams.Home.homeFoul = totalFouls;
       } else {
-        this.teams.Away.awayFoul = cappedFouls;
+        this.teams.Away.awayFoul = totalFouls;
       }
     },
     toggleGameClock() {
