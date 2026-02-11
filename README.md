@@ -45,7 +45,7 @@
 
 ### Backend
 - **Java 17** - 백엔드 로직 구현
-- **Spring Boot ** - REST API 및 WebSocket 서버 구축
+- **Spring Boot** - REST API 및 WebSocket 서버 구축
 - **WebSocket** - 실시간 양방향 통신
 
 ### Frontend
