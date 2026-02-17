@@ -8,7 +8,7 @@
     <div class="game-details">
       <div class="team-info">
         <span class="team-name home">{{ gameState.home.name }}</span>
-        <span class="final-score">{{ totalScore.home }} - {{ totalScore.away }}</span>
+        <span class="final-score">{{ totalGameScore.home }} - {{ totalGameScore.away }}</span>
         <span class="team-name away">{{ gameState.away.name }}</span>
       </div>
       <div class="game-meta">
@@ -33,7 +33,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="player in homePlayers" :key="player.id">
+            <tr v-for="player in homePlayersForReport" :key="player.id">
               <td>{{ player.no }}</td>
               <td>{{ player.name }}</td>
               <td>{{ player.points }}</td>
@@ -44,9 +44,6 @@
             </tr>
           </tbody>
         </table>
-        <div class="team-summary">
-<!--          -->
-        </div>
       </div>
 
       <!-- Away Team Stats -->
@@ -65,7 +62,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="player in awayPlayers" :key="player.id">
+            <tr v-for="player in awayPlayersForReport" :key="player.id">
               <td>{{ player.no }}</td>
               <td>{{ player.name }}</td>
               <td>{{ player.points }}</td>
@@ -76,9 +73,6 @@
             </tr>
           </tbody>
         </table>
-        <div class="team-summary">
-<!--          -->
-        </div>
       </div>
     </div>
 
@@ -111,6 +105,7 @@
             </tbody>
         </table>
     </div>
+
     <div class="footer">
       <p>Nincore Board - Official Game Record</p>
     </div>
@@ -120,6 +115,7 @@
 <script>
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { normalizeGameLog } from '@/shared/gameLogEvents';
 
 export default {
   name: "GameReport",
@@ -128,30 +124,28 @@ export default {
       type: Object,
       required: true,
       default: () => ({
-        home: { name: 'Home Team', foul: 0, timeout: 0, players: [] },
-        away: { name: 'Away Team', foul: 0, timeout: 0, players: [] },
+        home: { name: 'Home Team', foul: 0, players: [] },
+        away: { name: 'Away Team', foul: 0, players: [] },
+        quarter: 1,
         gameLog: [],
+        everActivePlayerIds: {
+          Home: [],
+          Away: [],
+        },
+        rosterPlayers: {
+          Home: [],
+          Away: [],
+        },
       })
     }
   },
-  // mounted() {
-  //   // alert(this.gameState.home.players[4].points);
-  // },
   computed: {
-    homePlayers() {
-      return (this.gameState.home.players || []).slice().sort((a, b) => (a.no || 0) - (b.no || 0));
-    },
-    awayPlayers() {
-      return (this.gameState.away.players || []).slice().sort((a, b) => (a.no || 0) - (b.no || 0));
-    },
-    totalScore() {
-      const homeScore = this.homePlayers.reduce((acc, player) => acc + player.points, 0);
-      const awayScore = this.awayPlayers.reduce((acc, player) => acc + player.points, 0);
-      return { home: homeScore, away: awayScore };
+    normalizedGameLog() {
+      return normalizeGameLog(this.gameState.gameLog);
     },
     allQuarters() {
-      const quartersInLog = new Set(this.gameState.gameLog.map(e => e.quarter));
-      const maxQuarter = Math.max(1, this.gameState.quarter, ...quartersInLog); // Ensure at least 1, and consider current quarter
+      const quartersInLog = new Set(this.normalizedGameLog.map(e => e.quarter));
+      const maxQuarter = Math.max(1, this.gameState.quarter, ...quartersInLog);
 
       const allQuarters = new Set();
       for (let i = 1; i <= maxQuarter; i++) {
@@ -161,14 +155,24 @@ export default {
 
       return Array.from(allQuarters).sort((a, b) => a - b);
     },
+    // Filter players who were ever on the active roster
+    homePlayersForReport() {
+      const allHomePlayers = this.gameState.rosterPlayers.Home || [];
+      const everActiveHomeIds = new Set(this.gameState.everActivePlayerIds.Home || []);
+      return allHomePlayers
+        .filter(p => everActiveHomeIds.has(p.id))
+        .sort((a, b) => (a.no || 0) - (b.no || 0));
+    },
+    awayPlayersForReport() {
+      const allAwayPlayers = this.gameState.rosterPlayers.Away || [];
+      const everActiveAwayIds = new Set(this.gameState.everActivePlayerIds.Away || []);
+      return allAwayPlayers
+        .filter(p => everActiveAwayIds.has(p.id))
+        .sort((a, b) => (a.no || 0) - (b.no || 0));
+    },
     quarterlyStats() {
       const stats = {};
 
-      if (!this.gameState.gameLog) {
-        return stats;
-      }
-
-      // Initialize stats for all quarters
       this.allQuarters.forEach(q => {
         stats[q] = {
           home: { score: 0, foul: 0 },
@@ -176,19 +180,36 @@ export default {
         };
       });
 
-      this.gameState.gameLog.forEach(event => {
-        const { quarter, type, team, points } = event;
-        if (!stats[quarter]) return; // Should not happen due to initialization
+      this.normalizedGameLog.forEach((event) => {
+        const { quarter, kind, teamKey, payload } = event;
+        if (!stats[quarter]) return;
 
-        const teamKey = team.toLowerCase(); // 'Home' -> 'home', 'Away' -> 'away'
+        const side = teamKey === 'Home' ? 'home' : 'away';
 
-        if (type === 'SCORE') {
-          stats[quarter][teamKey].score += points;
-        } else if (type === 'FOUL') {
-          stats[quarter][teamKey].foul += 1;
+        if (kind === 'SCORE') {
+          stats[quarter][side].score += Number(payload && payload.points) || 0;
+        } else if (kind === 'FOUL') {
+          stats[quarter][side].foul += Number(payload && payload.delta) || 0;
         }
       });
       return stats;
+    },
+    totalGameScore() {
+      const homeScore = this.normalizedGameLog
+          .filter((e) => e.kind === 'SCORE' && e.teamKey === 'Home')
+          .reduce((acc, e) => acc + (Number(e.payload && e.payload.points) || 0), 0);
+      const awayScore = this.normalizedGameLog
+          .filter((e) => e.kind === 'SCORE' && e.teamKey === 'Away')
+          .reduce((acc, e) => acc + (Number(e.payload && e.payload.points) || 0), 0);
+
+      if (homeScore === 0 && awayScore === 0) {
+        return {
+          home: this.gameState.home.score,
+          away: this.gameState.away.score,
+        };
+      }
+
+      return { home: homeScore, away: awayScore };
     }
   },
   methods: {
