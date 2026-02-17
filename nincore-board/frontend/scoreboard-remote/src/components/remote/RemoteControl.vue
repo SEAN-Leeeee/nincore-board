@@ -441,6 +441,7 @@ import { disconnectWS, sendCommand } from "@/shared/wsClient";
 import "./remote-control.css";
 import { ActionType } from "@/shared/actionTypes";
 import { subscribeState, loadState, publishState } from "@/shared/stateChannel";
+import { createScoreEvent, createStatEvent, normalizeGameLog } from "@/shared/gameLogEvents";
 import RosterModal from "@/components/remote/RosterModal.vue";
 import ReportModal from "@/components/report/ReportModal.vue";
 
@@ -515,6 +516,7 @@ export default {
         scoreUndoTargetTeam: null,
         isReportModalVisible: false,
         gameLog: [],
+        everActivePlayerIds: { Home: new Set(), Away: new Set() },
         connectedIp: '',
         sessionPassword: '',
         debouncedSyncState: null, // Added debouncedSyncState
@@ -526,8 +528,8 @@ export default {
     },
     computed: {
       activePlayers() {      return {
-        Home: this.players.Home.sort((a, b) => a.no - b.no),
-        Away: this.players.Away.sort((a, b) => a.no - b.no),
+        Home: (this.players.Home || []).slice().sort((a, b) => a.no - b.no),
+        Away: (this.players.Away || []).slice().sort((a, b) => a.no - b.no),
       };
     },
     homeName: {
@@ -570,6 +572,14 @@ export default {
         gameClock: this.gameClockSec,
         shotClock: this.shotClockSec,
         gameLog: log,
+        everActivePlayerIds: {
+          Home: Array.from(this.everActivePlayerIds.Home),
+          Away: Array.from(this.everActivePlayerIds.Away),
+        },
+        rosterPlayers: {
+          Home: this.rosterPlayers.Home.map(p => ({ ...p })),
+          Away: this.rosterPlayers.Away.map(p => ({ ...p })),
+        }
       };
     },
   },
@@ -588,8 +598,8 @@ export default {
 
       this.applyStateToView(initialState);
     }
-    this.connectedIp = initialState.ip;
-    this.sessionPassword = initialState.password;
+    this.connectedIp = (initialState && initialState.ip) || "";
+    this.sessionPassword = (initialState && initialState.password) || "";
 
     // Hardcode players if connectedIp is "번희수"
     if (this.connectedIp === '번희수') {
@@ -630,7 +640,15 @@ export default {
       else if (typeof s.isRunningShot === "boolean") this.isShotRunning = s.isRunningShot;
       else if (typeof s.shotRunning === "boolean") this.isShotRunning = s.shotRunning;
 
-      if (s.gameLog) this.gameLog = s.gameLog;
+      if (Array.isArray(s.gameLog)) this.gameLog = normalizeGameLog(s.gameLog);
+      if (s.everActivePlayerIds) {
+        const homeIds = Array.isArray(s.everActivePlayerIds.Home) ? s.everActivePlayerIds.Home : [];
+        const awayIds = Array.isArray(s.everActivePlayerIds.Away) ? s.everActivePlayerIds.Away : [];
+        this.everActivePlayerIds = {
+          Home: new Set(homeIds),
+          Away: new Set(awayIds),
+        };
+      }
 
       const inResetGuard = Date.now() < (this.resetGuardUntil || 0);
       if (!inResetGuard) {
@@ -695,6 +713,8 @@ export default {
       this.statUndoTargetTeam = null;
       this.statUndoField = null;
 
+      this.everActivePlayerIds = { Home: new Set(), Away: new Set() };
+
       this.gameClockSec = this.strictGameTime;
       this.shotClockSec = 24;
 
@@ -755,6 +775,10 @@ export default {
           homeName: this.teams.Home.homeName,
           awayName: this.teams.Away.awayName,
           gameLog: this.gameLog,
+          everActivePlayerIds: {
+            Home: Array.from(this.everActivePlayerIds.Home),
+            Away: Array.from(this.everActivePlayerIds.Away),
+          },
         });
       }
     },
@@ -808,6 +832,13 @@ export default {
     onPlayerFoulClick(teamKey, playerId) {
       this.addPlayerStat(teamKey, playerId, "fouls", 1);
     },
+    markPlayerEverActive(teamKey, playerId) {
+      if (!playerId) return;
+      if (!this.everActivePlayerIds[teamKey]) {
+        this.$set(this.everActivePlayerIds, teamKey, new Set());
+      }
+      this.everActivePlayerIds[teamKey].add(playerId);
+    },
     undoLastScore() {
       if (!this.lastScoringPlayer) return;
 
@@ -820,7 +851,10 @@ export default {
         this.addTeamScore(teamKey, -1);
         this.lastScoringPlayer = null;
 
-        const lastScoreIndex = this.gameLog.slice().reverse().findIndex(e => e.type === 'SCORE' && e.team === teamKey);
+        const lastScoreIndex = this.gameLog
+            .slice()
+            .reverse()
+            .findIndex((e) => e.kind === "SCORE" && e.teamKey === teamKey);
         if (lastScoreIndex !== -1) {
           this.gameLog.splice(this.gameLog.length - 1 - lastScoreIndex, 1);
         }
@@ -846,11 +880,19 @@ export default {
         this.teams.Away.awayScore = Math.max(0, this.teams.Away.awayScore - 1);
       }
 
-      this.gameLog.push({ type: 'SCORE', team: teamKey, points: -1, quarter: this.quarter });
+      this.markPlayerEverActive(teamKey, playerId);
+      this.gameLog.push(
+          createScoreEvent({
+            quarter: this.quarter,
+            teamKey,
+            playerId,
+            points: -1,
+          })
+      );
 
       this.isScoreUndoSelectMode = false;
       this.scoreUndoTargetTeam = null;
-      this.syncState();
+      this.debouncedSyncState();
     },
     startScoreUndoSelection(teamKey) {
       this.isPlayerSelectMode = false;
@@ -872,9 +914,9 @@ export default {
       }
 
       // Clear the stat decrement mode
-      this.isStatDecrementMode = false;
-      this.statDecrementTargetTeam = null;
-      this.statDecrementTargetField = null;
+      this.isStatUndoSelectMode = false;
+      this.statUndoTargetTeam = null;
+      this.statUndoField = null;
     },
     confirmPlayerScore(teamKey, playerId) {
       if (!this.isPlayerSelectMode || this.scoreTargetTeam !== teamKey) return;
@@ -888,7 +930,15 @@ export default {
       this.pointsToAdd = 0;
       this.scoreTargetTeam = null;
 
-      this.gameLog.push({ type: 'SCORE', team: teamKey, points: points_to_add, quarter: this.quarter });
+      this.markPlayerEverActive(teamKey, playerId);
+      this.gameLog.push(
+          createScoreEvent({
+            quarter: this.quarter,
+            teamKey,
+            playerId,
+            points: points_to_add,
+          })
+      );
 
       p.points = Math.max(0, (p.points || 0) + points_to_add);
 
@@ -899,7 +949,7 @@ export default {
       }
 
       this.lastScoringPlayer = { teamKey, playerId, points: points_to_add };
-      this.syncState();
+      this.debouncedSyncState();
     },
     addPlayerStat(teamKey, playerId, field, delta) {
       const list = this.players[teamKey];
@@ -909,6 +959,7 @@ export default {
       const oldPlayerStat = p[field] || 0;
       const newPlayerStat = Math.max(0, oldPlayerStat + delta);
       p[field] = newPlayerStat;
+      this.markPlayerEverActive(teamKey, playerId);
 
       const actualDelta = newPlayerStat - oldPlayerStat;
 
@@ -920,11 +971,26 @@ export default {
         this.teams[teamKey][teamStatKey] = Math.max(0, (this.teams[teamKey][teamStatKey] || 0) + actualDelta);
       }
       
-      if (delta > 0) {
-          this.gameLog.push({ type: field.toUpperCase(), team: teamKey, playerId: playerId, quarter: this.quarter });
+      const kindMap = {
+        fouls: "FOUL",
+        assists: "ASSIST",
+        rebounds: "REBOUND",
+        steals: "STEAL",
+      };
+      const statKind = kindMap[field];
+      if (actualDelta !== 0 && statKind) {
+        this.gameLog.push(
+            createStatEvent({
+              quarter: this.quarter,
+              teamKey,
+              playerId,
+              kind: statKind,
+              delta: actualDelta,
+            })
+        );
       }
 
-      this.syncState();
+      this.debouncedSyncState();
     },
     startStatUndoSelection(teamKey, field) {
       this.isPlayerSelectMode = false;
@@ -985,19 +1051,30 @@ export default {
           fouls: 0
         };
 
+        // Ensure critical player properties from modal are always present
+        const safePlayerFromModal = {
+            id: playerFromModal.id,
+            no: playerFromModal.no || 0, // Default to 0 if not present
+            name: playerFromModal.name || '', // Default to empty string
+            selected: playerFromModal.selected || false, // Default to false
+        };
+
         return {
           ...defaultStats,
           ...(oldPlayerFromMaster || {}),
-          ...playerFromModal,
-          ...latestStats,
+          ...safePlayerFromModal,
+          ...(latestStats || {}),
         };
       });
 
       this.$set(this.rosterPlayers, team, newMasterRoster);
-      this.players[team] = newMasterRoster.filter(p => p.selected).slice(0, 5);
+      this.$set(this.players, team, newMasterRoster.filter(p => p.selected).slice(0, 5));
 
+      // Add newly active players to the set of all-time active players for the report
+      this.players[team].forEach(p => this.everActivePlayerIds[team].add(p.id));
+
+      this.debouncedSyncState();
       this.closeRoster();
-      this.syncState();
     },
     syncState() {
       const fullState = {
@@ -1015,6 +1092,10 @@ export default {
         homeName: this.teams.Home.homeName,
         awayName: this.teams.Away.awayName,
         gameLog: this.gameLog,
+        everActivePlayerIds: {
+          Home: Array.from(this.everActivePlayerIds.Home),
+          Away: Array.from(this.everActivePlayerIds.Away),
+        },
       };
       publishState(fullState);
       this.pushState(ActionType.STATE_UPDATE, fullState);
