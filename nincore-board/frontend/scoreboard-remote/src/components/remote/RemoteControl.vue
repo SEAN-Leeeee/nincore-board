@@ -675,6 +675,15 @@ export default {
       if (s.rosterPlayers) {
         if (s.rosterPlayers.Home || s.rosterPlayers.Away) this.rosterPlayers = s.rosterPlayers;
       }
+      if (s.homeAssists !== undefined) this.teams.Home.homeAssists = Number(s.homeAssists) || 0;
+      if (s.homeRebounds !== undefined) this.teams.Home.homeRebounds = Number(s.homeRebounds) || 0;
+      if (s.homeSteals !== undefined) this.teams.Home.homeSteals = Number(s.homeSteals) || 0;
+      if (s.awayAssists !== undefined) this.teams.Away.awayAssists = Number(s.awayAssists) || 0;
+      if (s.awayRebounds !== undefined) this.teams.Away.awayRebounds = Number(s.awayRebounds) || 0;
+      if (s.awaySteals !== undefined) this.teams.Away.awaySteals = Number(s.awaySteals) || 0;
+
+      this.recalculateTeamStats("Home");
+      this.recalculateTeamStats("Away");
     },
     pushState(action, payload) {
       const session = sessionStorage.getItem("sessionId");
@@ -1090,6 +1099,7 @@ export default {
 
       // Add newly active players to the set of all-time active players for the report
       this.players[team].forEach(p => this.everActivePlayerIds[team].add(p.id));
+      this.recalculateTeamStats(team);
 
       this.debouncedSyncState();
       this.closeRoster();
@@ -1103,8 +1113,14 @@ export default {
         isShotRunning: this.isShotRunning,
         homeScore: this.teams.Home.homeScore,
         homeFoul: this.teams.Home.homeFoul,
+        homeAssists: this.teams.Home.homeAssists,
+        homeRebounds: this.teams.Home.homeRebounds,
+        homeSteals: this.teams.Home.homeSteals,
         awayScore: this.teams.Away.awayScore,
         awayFoul: this.teams.Away.awayFoul,
+        awayAssists: this.teams.Away.awayAssists,
+        awayRebounds: this.teams.Away.awayRebounds,
+        awaySteals: this.teams.Away.awaySteals,
         players: this.players,
         rosterPlayers: this.rosterPlayers,
         homeName: this.teams.Home.homeName,
@@ -1119,17 +1135,17 @@ export default {
       this.pushState(ActionType.STATE_UPDATE, fullState);
     },
     recalculateTeamFouls(teamKey) {
+      this.recalculateTeamStats(teamKey);
+    },
+    recalculateTeamStats(teamKey) {
       const teamPlayers = this.players[teamKey] || [];
-      let totalFouls = 0;
-      for (const p of teamPlayers) {
-        totalFouls += (p.fouls || 0);
-      }
+      const prefix = teamKey.toLowerCase();
 
-      if (teamKey === 'Home') {
-        this.teams.Home.homeFoul = totalFouls;
-      } else {
-        this.teams.Away.awayFoul = totalFouls;
-      }
+      const sum = (field) => teamPlayers.reduce((acc, p) => acc + (Number(p[field]) || 0), 0);
+      this.teams[teamKey][`${prefix}Foul`] = sum("fouls");
+      this.teams[teamKey][`${prefix}Assists`] = sum("assists");
+      this.teams[teamKey][`${prefix}Rebounds`] = sum("rebounds");
+      this.teams[teamKey][`${prefix}Steals`] = sum("steals");
     },
     toggleGameClock() {
       const next = !this.isGameRunning;
