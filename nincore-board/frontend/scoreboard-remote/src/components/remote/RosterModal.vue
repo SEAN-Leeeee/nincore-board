@@ -66,13 +66,27 @@ export default {
   },
   data() {
     let initialPlayers = this.players.map(p => ({ ...p }));
-    let startingNextId = this.players.reduce((m, p) => Math.max(m, p.id), 0) + 1;
+    
+    // Determine a starting point for unique numeric IDs for players added within the modal
+    // Existing players passed via props have string IDs like "player_X_name_random"
+    // New players added in modal will have string IDs like "modal_player_X"
+    let maxExistingModalIdNum = 0;
+    initialPlayers.forEach(p => {
+        if (typeof p.id === 'string' && p.id.startsWith('modal_player_')) {
+            const numPart = parseInt(p.id.split('_')[2]);
+            if (!isNaN(numPart)) {
+                maxExistingModalIdNum = Math.max(maxExistingModalIdNum, numPart);
+            }
+        }
+    });
 
-    // If no players are provided, add 5 empty slots by default
+    let nextIdCounter = maxExistingModalIdNum + 1; // Counter for new IDs in the modal
+
+    // If no players are provided (e.g., first time opening roster for a team), add 5 empty slots by default
     if (initialPlayers.length === 0) {
       for (let i = 0; i < 5; i++) {
         initialPlayers.push({
-          id: startingNextId++,
+          id: `modal_player_${nextIdCounter++}`, // Generate unique string ID for modal-added players
           no: "",
           name: "",
           selected: false
@@ -82,7 +96,7 @@ export default {
 
     return {
       localPlayers: initialPlayers,
-      nextId: startingNextId
+      nextId: nextIdCounter // Use the counter for future additions
     };
   },
   computed: {
@@ -124,10 +138,15 @@ export default {
 
     addRow() {
       this.localPlayers.push({
-        id: this.nextId++,
+        id: `modal_player_${this.nextId++}`,
         no: "",
         name: "",
-        selected: false
+        selected: false,
+        points: 0,
+        assists: 0,
+        rebounds: 0,
+        steals: 0,
+        fouls: 0,
       });
     },
 
