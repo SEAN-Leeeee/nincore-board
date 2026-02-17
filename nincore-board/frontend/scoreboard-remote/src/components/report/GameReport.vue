@@ -186,21 +186,23 @@ export default {
 
         const side = teamKey === 'Home' ? 'home' : 'away';
 
-        if (kind === 'SCORE') {
-          stats[quarter][side].score += Number(payload && payload.points) || 0;
+        if (kind === 'SCORE' || kind === 'SCORE_UNDO') {
+          stats[quarter][side].score += Number(payload && payload.delta) || 0;
         } else if (kind === 'FOUL') {
           stats[quarter][side].foul += Number(payload && payload.delta) || 0;
+        } else if (kind === 'STAT_UNDO' && payload && payload.statKind === 'FOUL') {
+          stats[quarter][side].foul += Number(payload.delta) || 0;
         }
       });
       return stats;
     },
     totalGameScore() {
       const homeScore = this.normalizedGameLog
-          .filter((e) => e.kind === 'SCORE' && e.teamKey === 'Home')
-          .reduce((acc, e) => acc + (Number(e.payload && e.payload.points) || 0), 0);
+          .filter((e) => (e.kind === 'SCORE' || e.kind === 'SCORE_UNDO') && e.teamKey === 'Home')
+          .reduce((acc, e) => acc + (Number(e.payload && e.payload.delta) || 0), 0);
       const awayScore = this.normalizedGameLog
-          .filter((e) => e.kind === 'SCORE' && e.teamKey === 'Away')
-          .reduce((acc, e) => acc + (Number(e.payload && e.payload.points) || 0), 0);
+          .filter((e) => (e.kind === 'SCORE' || e.kind === 'SCORE_UNDO') && e.teamKey === 'Away')
+          .reduce((acc, e) => acc + (Number(e.payload && e.payload.delta) || 0), 0);
 
       if (homeScore === 0 && awayScore === 0) {
         return {

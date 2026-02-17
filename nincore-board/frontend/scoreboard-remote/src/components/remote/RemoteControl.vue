@@ -441,7 +441,13 @@ import { disconnectWS, sendCommand } from "@/shared/wsClient";
 import "./remote-control.css";
 import { ActionType } from "@/shared/actionTypes";
 import { subscribeState, loadState, publishState } from "@/shared/stateChannel";
-import { createScoreEvent, createStatEvent, normalizeGameLog } from "@/shared/gameLogEvents";
+import {
+  createScoreEvent,
+  createScoreUndoEvent,
+  createStatEvent,
+  createStatUndoEvent,
+  normalizeGameLog,
+} from "@/shared/gameLogEvents";
 import RosterModal from "@/components/remote/RosterModal.vue";
 import ReportModal from "@/components/report/ReportModal.vue";
 
@@ -882,11 +888,11 @@ export default {
 
       this.markPlayerEverActive(teamKey, playerId);
       this.gameLog.push(
-          createScoreEvent({
+          createScoreUndoEvent({
             quarter: this.quarter,
             teamKey,
             playerId,
-            points: -1,
+            points: 1,
           })
       );
 
@@ -979,15 +985,27 @@ export default {
       };
       const statKind = kindMap[field];
       if (actualDelta !== 0 && statKind) {
-        this.gameLog.push(
-            createStatEvent({
-              quarter: this.quarter,
-              teamKey,
-              playerId,
-              kind: statKind,
-              delta: actualDelta,
-            })
-        );
+        if (actualDelta > 0) {
+          this.gameLog.push(
+              createStatEvent({
+                quarter: this.quarter,
+                teamKey,
+                playerId,
+                kind: statKind,
+                delta: actualDelta,
+              })
+          );
+        } else {
+          this.gameLog.push(
+              createStatUndoEvent({
+                quarter: this.quarter,
+                teamKey,
+                playerId,
+                statKind,
+                delta: Math.abs(actualDelta),
+              })
+          );
+        }
       }
 
       this.debouncedSyncState();
