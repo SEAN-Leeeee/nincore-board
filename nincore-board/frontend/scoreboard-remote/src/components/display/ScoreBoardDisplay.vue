@@ -87,8 +87,8 @@ export default {
       state: null,
       baseW: 1200,
       baseH: 600,
-      homeTeamName: "",
-      awayTeamName: "",
+      homeTeamName: "HOME",
+      awayTeamName: "AWAY",
       quarter: 1,
       gameClockSec: 7 * 60,
       shotClockSec: 24,
@@ -144,12 +144,10 @@ export default {
       console.error("BroadcastChannel 생성 실패:", e);
     }
 
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        this.applyStateToView(JSON.parse(raw));
-      }
-    } catch (e) {}
+    const initialState = loadState();
+    if (initialState) {
+      this.applyStateToView(initialState);
+    }
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.updateScale);
@@ -167,17 +165,23 @@ export default {
       if (typeof s.gameTime === "number") this.gameClockSec = s.gameTime;
       if (typeof s.shotClock === "number") this.shotClockSec = s.shotClock;
 
-      this.homeTeamName = s.homeName ?? this.homeTeamName;
+      const homeName = String(s.homeName ?? "").trim();
+      const awayName = String(s.awayName ?? "").trim();
+
+      this.homeTeamName = homeName || this.homeTeamName || "HOME";
       this.homeScore = Number(s.homeScore ?? this.homeScore);
       this.homeTeamFouls = Number(s.homeFoul ?? this.homeTeamFouls);
 
-      this.awayTeamName = s.awayName ?? this.awayTeamName;
+      this.awayTeamName = awayName || this.awayTeamName || "AWAY";
       this.awayScore = Number(s.awayScore ?? this.awayScore);
       this.awayTeamFouls = Number(s.awayFoul ?? this.awayTeamFouls);
 
       const players = s.players || {};
       const homePlayers = players.Home || players.A || [];
       const awayPlayers = players.Away || players.B || [];
+      const rosterPlayers = s.rosterPlayers || {};
+      const homeRoster = rosterPlayers.Home || [];
+      const awayRoster = rosterPlayers.Away || [];
 
       const toRow = (p) => ({
         no: p.no ?? "",
@@ -186,8 +190,16 @@ export default {
         p: typeof p.points === "number" ? p.points : (typeof p.p === "number" ? p.p : 0)
       });
 
-      this.homePlayers = (homePlayers || []).slice(0, 5).map(toRow).sort((a, b) => a.no - b.no);
-      this.awayPlayers = (awayPlayers || []).slice(0, 5).map(toRow).sort((a, b) => a.no - b.no);
+      const resolvedHome = (homePlayers && homePlayers.length)
+          ? homePlayers
+          : homeRoster.filter((p) => p.selected).slice(0, 5);
+      const resolvedAway = (awayPlayers && awayPlayers.length)
+          ? awayPlayers
+          : awayRoster.filter((p) => p.selected).slice(0, 5);
+
+      const sortByNo = (a, b) => Number(a.no ?? 0) - Number(b.no ?? 0);
+      this.homePlayers = (resolvedHome || []).slice(0, 5).map(toRow).sort(sortByNo);
+      this.awayPlayers = (resolvedAway || []).slice(0, 5).map(toRow).sort(sortByNo);
     },
     updateScale() {
       const vw = window.innerWidth;
