@@ -448,6 +448,10 @@ import {
   createStatUndoEvent,
   normalizeGameLog,
 } from "@/shared/gameLogEvents";
+import {
+  createStateUpdatePayloadFromLocal,
+  normalizeStateUpdatePayload,
+} from "@/shared/stateUpdateSchema";
 import RosterModal from "@/components/remote/RosterModal.vue";
 import ReportModal from "@/components/report/ReportModal.vue";
 
@@ -631,25 +635,26 @@ export default {
     applyStateToView(s) {
       // const sessionId = sessionStorage.getItem("sessionId"); // Commented out as it's no longer used for filtering initial load
       if (!s) return; // Only check for null/undefined payload
+      const state = normalizeStateUpdatePayload(s);
 
-      if (typeof s.quarter === "number") this.quarter = s.quarter;
-      if (typeof s.gameTime === "number") this.gameClockSec = s.gameTime;
-      if (typeof s.shotClock === "number") this.shotClockSec = s.shotClock;
+      if (typeof state.quarter === "number") this.quarter = state.quarter;
+      if (typeof state.gameTime === "number") this.gameClockSec = state.gameTime;
+      if (typeof state.shotClock === "number") this.shotClockSec = state.shotClock;
 
-      if (typeof s.isGameRunning === "boolean") this.isGameRunning = s.isGameRunning;
+      if (typeof state.isGameRunning === "boolean") this.isGameRunning = state.isGameRunning;
       else if (typeof s.gameIsRunning === "boolean") this.isGameRunning = s.gameIsRunning;
       else if (typeof s.isRunningGame === "boolean") this.isGameRunning = s.isRunningGame;
       else if (typeof s.gameRunning === "boolean") this.isGameRunning = s.gameRunning;
 
-      if (typeof s.isShotRunning === "boolean") this.isShotRunning = s.isShotRunning;
+      if (typeof state.isShotRunning === "boolean") this.isShotRunning = state.isShotRunning;
       else if (typeof s.shotIsRunning === "boolean") this.isShotRunning = s.shotIsRunning;
       else if (typeof s.isRunningShot === "boolean") this.isShotRunning = s.isRunningShot;
       else if (typeof s.shotRunning === "boolean") this.isShotRunning = s.shotRunning;
 
-      if (Array.isArray(s.gameLog)) this.gameLog = normalizeGameLog(s.gameLog);
-      if (s.everActivePlayerIds) {
-        const homeIds = Array.isArray(s.everActivePlayerIds.Home) ? s.everActivePlayerIds.Home : [];
-        const awayIds = Array.isArray(s.everActivePlayerIds.Away) ? s.everActivePlayerIds.Away : [];
+      if (Array.isArray(state.gameLog)) this.gameLog = normalizeGameLog(state.gameLog);
+      if (state.everActivePlayerIds) {
+        const homeIds = Array.isArray(state.everActivePlayerIds.Home) ? state.everActivePlayerIds.Home : [];
+        const awayIds = Array.isArray(state.everActivePlayerIds.Away) ? state.everActivePlayerIds.Away : [];
         this.everActivePlayerIds = {
           Home: new Set(homeIds),
           Away: new Set(awayIds),
@@ -658,29 +663,29 @@ export default {
 
       const inResetGuard = Date.now() < (this.resetGuardUntil || 0);
       if (!inResetGuard) {
-        if (s.homeScore !== undefined) this.teams.Home.homeScore = s.homeScore;
-        if (s.homeFoul !== undefined) this.teams.Home.homeFoul = s.homeFoul;
-        if (s.awayScore !== undefined) this.teams.Away.awayScore = s.awayScore;
-        if (s.awayFoul !== undefined) this.teams.Away.awayFoul = s.awayFoul;
+        if (state.homeScore !== undefined) this.teams.Home.homeScore = state.homeScore;
+        if (state.homeFoul !== undefined) this.teams.Home.homeFoul = state.homeFoul;
+        if (state.awayScore !== undefined) this.teams.Away.awayScore = state.awayScore;
+        if (state.awayFoul !== undefined) this.teams.Away.awayFoul = state.awayFoul;
       } else {
-        if (s.homeName !== undefined) this.teams.Home.homeName = s.homeName;
-        if (s.awayName !== undefined) this.teams.Away.awayName = s.awayName;
+        if (state.homeName !== undefined) this.teams.Home.homeName = state.homeName;
+        if (state.awayName !== undefined) this.teams.Away.awayName = state.awayName;
       }
 
-      if (s.homeName !== undefined) this.teams.Home.homeName = s.homeName;
-      if (s.awayName !== undefined) this.teams.Away.awayName = s.awayName;
-      if (s.players) {
-        if (s.players.Home || s.players.Away) this.players = s.players;
+      if (state.homeName !== undefined) this.teams.Home.homeName = state.homeName;
+      if (state.awayName !== undefined) this.teams.Away.awayName = state.awayName;
+      if (state.players) {
+        if (state.players.Home || state.players.Away) this.players = state.players;
       }
-      if (s.rosterPlayers) {
-        if (s.rosterPlayers.Home || s.rosterPlayers.Away) this.rosterPlayers = s.rosterPlayers;
+      if (state.rosterPlayers) {
+        if (state.rosterPlayers.Home || state.rosterPlayers.Away) this.rosterPlayers = state.rosterPlayers;
       }
-      if (s.homeAssists !== undefined) this.teams.Home.homeAssists = Number(s.homeAssists) || 0;
-      if (s.homeRebounds !== undefined) this.teams.Home.homeRebounds = Number(s.homeRebounds) || 0;
-      if (s.homeSteals !== undefined) this.teams.Home.homeSteals = Number(s.homeSteals) || 0;
-      if (s.awayAssists !== undefined) this.teams.Away.awayAssists = Number(s.awayAssists) || 0;
-      if (s.awayRebounds !== undefined) this.teams.Away.awayRebounds = Number(s.awayRebounds) || 0;
-      if (s.awaySteals !== undefined) this.teams.Away.awaySteals = Number(s.awaySteals) || 0;
+      if (state.homeAssists !== undefined) this.teams.Home.homeAssists = Number(state.homeAssists) || 0;
+      if (state.homeRebounds !== undefined) this.teams.Home.homeRebounds = Number(state.homeRebounds) || 0;
+      if (state.homeSteals !== undefined) this.teams.Home.homeSteals = Number(state.homeSteals) || 0;
+      if (state.awayAssists !== undefined) this.teams.Away.awayAssists = Number(state.awayAssists) || 0;
+      if (state.awayRebounds !== undefined) this.teams.Away.awayRebounds = Number(state.awayRebounds) || 0;
+      if (state.awaySteals !== undefined) this.teams.Away.awaySteals = Number(state.awaySteals) || 0;
 
       this.recalculateTeamStats("Home");
       this.recalculateTeamStats("Away");
@@ -775,7 +780,9 @@ export default {
         });
       }
       if (ActionType.STATE_UPDATE) {
-        this.pushState(ActionType.STATE_UPDATE, {
+        this.pushState(
+            ActionType.STATE_UPDATE,
+            createStateUpdatePayloadFromLocal({
           quarter: 1,
           gameTime: this.strictGameTime,
           shotClock: 24,
@@ -783,8 +790,14 @@ export default {
           isShotRunning: false,
           homeScore: 0,
           homeFoul: 0,
+          homeAssists: 0,
+          homeRebounds: 0,
+          homeSteals: 0,
           awayScore: 0,
           awayFoul: 0,
+          awayAssists: 0,
+          awayRebounds: 0,
+          awaySteals: 0,
           players: this.players,
           rosterPlayers: this.rosterPlayers,
           homeName: this.teams.Home.homeName,
@@ -794,7 +807,8 @@ export default {
             Home: Array.from(this.everActivePlayerIds.Home),
             Away: Array.from(this.everActivePlayerIds.Away),
           },
-        });
+            })
+        );
       }
     },
     changeQuarter(delta) {
@@ -1105,7 +1119,7 @@ export default {
       this.closeRoster();
     },
     syncState() {
-      const fullState = {
+      const fullState = createStateUpdatePayloadFromLocal({
         quarter: this.quarter,
         gameTime: this.gameClockSec,
         shotClock: this.shotClockSec,
@@ -1130,7 +1144,7 @@ export default {
           Home: Array.from(this.everActivePlayerIds.Home),
           Away: Array.from(this.everActivePlayerIds.Away),
         },
-      };
+      });
       publishState(fullState);
       this.pushState(ActionType.STATE_UPDATE, fullState);
     },
