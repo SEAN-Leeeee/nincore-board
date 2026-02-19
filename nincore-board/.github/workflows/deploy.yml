@@ -1,0 +1,41 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            cd ~/nincore-board/nincore-board
+
+            # 최신 코드 pull
+            git pull
+
+            # 백엔드 빌드
+            cd backend/nincoreboard-api
+            ./gradlew build
+            cd ../..
+
+            # 프론트엔드 빌드 & 배포
+            cd frontend/scoreboard-remote
+            npm install
+            npm run build
+            sudo cp -r dist/* /var/www/nincore-board/
+            cd ../..
+
+            # 백엔드 재시작
+            PID=$(pgrep -f 'nincoreboard-api.*\.jar' || true)
+            if [ -n "$PID" ]; then
+              kill -9 $PID
+            fi
+            nohup java -jar backend/nincoreboard-api/build/libs/nincoreboard-api-0.0.1-SNAPSHOT.jar > nincore.log 2>&1 &
