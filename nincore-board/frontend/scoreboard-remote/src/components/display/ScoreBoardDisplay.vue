@@ -102,6 +102,8 @@ export default {
       fullScreenMode: false, // New data property
       _bc: null,
       _onMsg: null,
+      _initialLoadTimer: null,
+      _initialLoadAttempts: 0,
     };
   },
   computed: {
@@ -140,14 +142,12 @@ export default {
         this.applyStateToView(ev.data.payload);
       };
       this._bc.addEventListener("message", this._onMsg);
+      this.requestLatestState();
     } catch (e) {
       console.error("BroadcastChannel 생성 실패:", e);
     }
 
-    const initialState = loadState();
-    if (initialState) {
-      this.applyStateToView(initialState);
-    }
+    this.tryInitialStateLoad();
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.updateScale);
@@ -155,8 +155,39 @@ export default {
       this._bc.removeEventListener("message", this._onMsg);
       this._bc.close();
     }
+    if (this._initialLoadTimer) {
+      clearTimeout(this._initialLoadTimer);
+      this._initialLoadTimer = null;
+    }
   },
   methods: {
+    requestLatestState() {
+      if (!this._bc) return;
+      try {
+        this._bc.postMessage({ type: "REQUEST_STATE" });
+      } catch (e) {}
+    },
+    tryInitialStateLoad() {
+      const initialState = loadState();
+      if (initialState) {
+        this.applyStateToView(initialState);
+      }
+
+      const hasNames = Boolean(String(this.homeTeamName || "").trim()) && Boolean(String(this.awayTeamName || "").trim());
+      const hasPlayers = (this.homePlayers && this.homePlayers.length) || (this.awayPlayers && this.awayPlayers.length);
+
+      if (hasNames && hasPlayers) {
+        return;
+      }
+
+      if (this._initialLoadAttempts >= 15) {
+        return;
+      }
+
+      this._initialLoadAttempts += 1;
+      this.requestLatestState();
+      this._initialLoadTimer = setTimeout(() => this.tryInitialStateLoad(), 200);
+    },
     applyStateToView(s) {
       // const sessionId = sessionStorage.getItem("sessionId"); // Commented out as it's no longer used for filtering initial load
       if (!s) return; // Only check for null/undefined payload
@@ -177,11 +208,11 @@ export default {
       this.awayTeamFouls = Number(s.awayFoul ?? this.awayTeamFouls);
 
       const players = s.players || {};
-      const homePlayers = players.Home || players.A || [];
-      const awayPlayers = players.Away || players.B || [];
       const rosterPlayers = s.rosterPlayers || {};
-      const homeRoster = rosterPlayers.Home || [];
-      const awayRoster = rosterPlayers.Away || [];
+      const homePlayers = players.Home || players.home || players.A || [];
+      const awayPlayers = players.Away || players.away || players.B || [];
+      const homeRoster = rosterPlayers.Home || rosterPlayers.home || [];
+      const awayRoster = rosterPlayers.Away || rosterPlayers.away || [];
 
       const toRow = (p) => ({
         no: p.no ?? "",
@@ -190,12 +221,24 @@ export default {
         p: typeof p.points === "number" ? p.points : (typeof p.p === "number" ? p.p : 0)
       });
 
-      const resolvedHome = (homePlayers && homePlayers.length)
-          ? homePlayers
-          : homeRoster.filter((p) => p.selected).slice(0, 5);
-      const resolvedAway = (awayPlayers && awayPlayers.length)
-          ? awayPlayers
-          : awayRoster.filter((p) => p.selected).slice(0, 5);
+      const pickRosterPlayers = (rosterList) => {
+        const selected = (rosterList || []).filter((p) => p && (p.selected === true || p.selected === "true" || p.selected === 1));
+        if (selected.length) return selected.slice(0, 5);
+        return (rosterList || []).slice(0, 5);
+      };
+
+      const homePlayerList = Array.isArray(homePlayers) ? homePlayers : [];
+      const awayPlayerList = Array.isArray(awayPlayers) ? awayPlayers : [];
+      const homeRosterList = Array.isArray(homeRoster) ? homeRoster : [];
+      const awayRosterList = Array.isArray(awayRoster) ? awayRoster : [];
+
+      const resolvedHome = homePlayerList.length ? homePlayerList : pickRosterPlayers(homeRosterList);
+      const resolvedAway = awayPlayerList.length ? awayPlayerList : pickRosterPlayers(awayRosterList);
+
+      const hasIncomingPlayerData = homePlayerList.length || awayPlayerList.length || homeRosterList.length || awayRosterList.length;
+      if (!hasIncomingPlayerData) {
+        return;
+      }
 
       const sortByNo = (a, b) => Number(a.no ?? 0) - Number(b.no ?? 0);
       this.homePlayers = (resolvedHome || []).slice(0, 5).map(toRow).sort(sortByNo);

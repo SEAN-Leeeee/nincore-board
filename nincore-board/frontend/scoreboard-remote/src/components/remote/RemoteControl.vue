@@ -456,6 +456,7 @@ import RosterModal from "@/components/remote/RosterModal.vue";
 import ReportModal from "@/components/report/ReportModal.vue";
 
 const NINCORE_BOARD_STATE = "nincore-board-state";
+const CHANNEL = "nincore-scoreboard";
 
 // Simple debounce function
 function debounce(func, delay) {
@@ -534,6 +535,9 @@ export default {
         isStatUndoSelectMode: false,
         statUndoTargetTeam: null,
         statUndoField: null,
+        _bc: null,
+        _onBCMessage: null,
+        _onBeforeUnload: null,
       };
     },
     computed: {
@@ -619,13 +623,83 @@ export default {
       this.$set(this.players, 'Away', hardcodedPlayers.filter(p => p.selected).map(p => ({ ...p })));
       this.syncState();
     }
+
+    try {
+      this._bc = new BroadcastChannel(CHANNEL);
+      this._onBCMessage = (ev) => {
+        if (!ev || !ev.data) return;
+        if (ev.data.type !== "REQUEST_STATE") return;
+        this.publishSnapshotForDisplay();
+      };
+      this._bc.addEventListener("message", this._onBCMessage);
+    } catch (e) {}
+
+    this._onBeforeUnload = () => {
+      publishState(this.buildFullStatePayload());
+    };
+    window.addEventListener("beforeunload", this._onBeforeUnload);
   },
   beforeDestroy() {
     if (this.unsubscribe) {
       this.unsubscribe();
     }
+    if (this._bc && this._onBCMessage) {
+      this._bc.removeEventListener("message", this._onBCMessage);
+      this._bc.close();
+    }
+    if (this._onBeforeUnload) {
+      window.removeEventListener("beforeunload", this._onBeforeUnload);
+    }
   },
   methods: {
+    buildFullStatePayload() {
+      return createStateUpdatePayloadFromLocal({
+        quarter: this.quarter,
+        gameTime: this.gameClockSec,
+        shotClock: this.shotClockSec,
+        isGameRunning: this.isGameRunning,
+        isShotRunning: this.isShotRunning,
+        homeScore: this.teams.Home.homeScore,
+        homeFoul: this.teams.Home.homeFoul,
+        homeAssists: this.teams.Home.homeAssists,
+        homeRebounds: this.teams.Home.homeRebounds,
+        homeSteals: this.teams.Home.homeSteals,
+        awayScore: this.teams.Away.awayScore,
+        awayFoul: this.teams.Away.awayFoul,
+        awayAssists: this.teams.Away.awayAssists,
+        awayRebounds: this.teams.Away.awayRebounds,
+        awaySteals: this.teams.Away.awaySteals,
+        players: this.players,
+        rosterPlayers: this.rosterPlayers,
+        homeName: this.teams.Home.homeName,
+        awayName: this.teams.Away.awayName,
+        gameLog: this.gameLog,
+        everActivePlayerIds: {
+          Home: Array.from(this.everActivePlayerIds.Home),
+          Away: Array.from(this.everActivePlayerIds.Away),
+        },
+      });
+    },
+    publishSnapshotForDisplay() {
+      const current = this.buildFullStatePayload();
+      const hasCurrentData =
+          (current.homeName && String(current.homeName).trim().length > 0) ||
+          (current.awayName && String(current.awayName).trim().length > 0) ||
+          (Array.isArray(current.players && current.players.Home) && current.players.Home.length > 0) ||
+          (Array.isArray(current.players && current.players.Away) && current.players.Away.length > 0) ||
+          (Array.isArray(current.rosterPlayers && current.rosterPlayers.Home) && current.rosterPlayers.Home.length > 0) ||
+          (Array.isArray(current.rosterPlayers && current.rosterPlayers.Away) && current.rosterPlayers.Away.length > 0) ||
+          Number(current.homeScore || 0) > 0 ||
+          Number(current.awayScore || 0) > 0;
+
+      if (hasCurrentData) {
+        publishState(current);
+        return;
+      }
+
+      const stored = loadState();
+      if (stored) publishState(stored);
+    },
     openReportModal() {
       this.isReportModalVisible = true;
     },
@@ -1119,32 +1193,7 @@ export default {
       this.closeRoster();
     },
     syncState() {
-      const fullState = createStateUpdatePayloadFromLocal({
-        quarter: this.quarter,
-        gameTime: this.gameClockSec,
-        shotClock: this.shotClockSec,
-        isGameRunning: this.isGameRunning,
-        isShotRunning: this.isShotRunning,
-        homeScore: this.teams.Home.homeScore,
-        homeFoul: this.teams.Home.homeFoul,
-        homeAssists: this.teams.Home.homeAssists,
-        homeRebounds: this.teams.Home.homeRebounds,
-        homeSteals: this.teams.Home.homeSteals,
-        awayScore: this.teams.Away.awayScore,
-        awayFoul: this.teams.Away.awayFoul,
-        awayAssists: this.teams.Away.awayAssists,
-        awayRebounds: this.teams.Away.awayRebounds,
-        awaySteals: this.teams.Away.awaySteals,
-        players: this.players,
-        rosterPlayers: this.rosterPlayers,
-        homeName: this.teams.Home.homeName,
-        awayName: this.teams.Away.awayName,
-        gameLog: this.gameLog,
-        everActivePlayerIds: {
-          Home: Array.from(this.everActivePlayerIds.Home),
-          Away: Array.from(this.everActivePlayerIds.Away),
-        },
-      });
+      const fullState = this.buildFullStatePayload();
       publishState(fullState);
       this.pushState(ActionType.STATE_UPDATE, fullState);
     },
