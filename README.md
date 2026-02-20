@@ -1,5 +1,4 @@
-<img width="32" height="17" alt="image" src="https://github.com/user-attachments/assets/04dff5bd-0a09-4395-ae24-8d2b08b25528" />![header](https://capsule-render.vercel.app/api?type=blur&height=300&color=gradient&text=NINcoreBoard&strokeWidth=2&section=footer&reversal=true&fontAlign=50&stroke=E0E0E0&fontSize=55&textBg=false)
-
+![header](https://capsule-render.vercel.app/api?type=blur&height=300&color=gradient&text=NINcoreBoard&strokeWidth=2&fontAlign=50&stroke=E0E0E0&fontSize=55&textBg=false)
 # 🏀 NincoreBoard
 
 > 실시간 점수판 원격 제어 시스템  
