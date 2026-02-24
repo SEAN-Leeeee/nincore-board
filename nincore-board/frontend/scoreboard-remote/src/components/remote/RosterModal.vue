@@ -58,6 +58,25 @@
 </template>
 
 <script>
+function parseNo(value) {
+  const n = Number.parseInt(String(value ?? "").trim(), 10);
+  return Number.isNaN(n) ? Number.POSITIVE_INFINITY : n;
+}
+
+function compareByNoAsc(a, b) {
+  const diff = parseNo(a && a.no) - parseNo(b && b.no);
+  if (diff !== 0) return diff;
+  const nameA = String((a && a.name) || "");
+  const nameB = String((b && b.name) || "");
+  return nameA.localeCompare(nameB, "ko");
+}
+
+function normalizeNo(value) {
+  const digits = String(value ?? "").replace(/[^0-9]/g, "").slice(0, 2);
+  if (!digits) return "";
+  return String(Number.parseInt(digits, 10));
+}
+
 export default {
   name: "RosterModal",
   props: {
@@ -65,7 +84,7 @@ export default {
     players: { type: Array, required: true }
   },
   data() {
-    let initialPlayers = this.players.map(p => ({ ...p }));
+    let initialPlayers = this.players.map(p => ({ ...p, no: normalizeNo(p.no) }));
     
     // Determine a starting point for unique numeric IDs for players added within the modal
     // Existing players passed via props have string IDs like "player_X_name_random"
@@ -114,7 +133,7 @@ export default {
     handleNoInput(event, index) {
       const value = event.target.value;
       // 숫자가 아닌 문자를 제거하고, 길이를 최대 2자로 제한합니다.
-      const filteredValue = value.replace(/[^0-9]/g, "").slice(0, 2);
+      const filteredValue = normalizeNo(value);
       const player = this.localPlayers[index];
 
       // Vue의 반응성을 보장하기 위해 this.$set을 사용하여 객체를 교체합니다.
@@ -187,7 +206,10 @@ export default {
         return;
       }
 
-      this.$emit("save", { team: this.team, players: this.localPlayers });
+      const sortedPlayers = (this.localPlayers || [])
+        .map((p) => ({ ...p, no: normalizeNo(p.no) }))
+        .sort(compareByNoAsc);
+      this.$emit("save", { team: this.team, players: sortedPlayers });
     }
   }
 };

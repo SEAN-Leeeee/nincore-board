@@ -24,7 +24,7 @@
 
 <script>
 import '@/assets/css/login.css';
-import { publishState } from '@/shared/stateChannel';
+import { publishState, clearPersistedState } from '@/shared/stateChannel';
 
 export default {
   name: 'LoginComponent',
@@ -85,6 +85,10 @@ export default {
 
         sessionStorage.setItem('sessionId', result.sessionId);
 
+        if (result.isNewSession) {
+          clearPersistedState();
+        }
+
         // Save IP, password, and sessionId to state for RemoteControl to pick up
         publishState({
           ip: this.ip,
@@ -93,7 +97,6 @@ export default {
         });
 
         if (result.isNewSession) {
-          localStorage.removeItem("nincore-board-state");
           this.$router.push({ name: 'Remote', params: { sessionId: result.sessionId } });
         } else {
           this.$router.push({ name: 'Display', params: { sessionId: result.sessionId } });

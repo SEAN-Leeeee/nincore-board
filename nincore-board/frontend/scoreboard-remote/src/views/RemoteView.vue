@@ -5,7 +5,7 @@
 <script>
 import RemoteControl from "@/components/remote/RemoteControl.vue";
 import { connectWS, disconnectWS } from "@/shared/wsClient";
-import { publishState } from "@/shared/stateChannel";
+import { loadState, publishState } from "@/shared/stateChannel";
 
 export default {
   name: "RemoteView",
@@ -15,12 +15,14 @@ export default {
     const remoteControlInstance = this.$refs.remoteControl;
 
     const handleStateUpdate = (state) => {
-      // 1. 현재 탭의 UI를 직접 업데이트하기 위해 자식 컴포넌트의 메서드를 호출합니다.
-      if (remoteControlInstance) {
-        remoteControlInstance.applyStateToView(state);
-      }
-      // 2. 다른 탭(디스플레이)에 상태를 전파합니다.
+      // 1. 상태를 저장/병합해 약한 패킷으로 기존 데이터가 지워지지 않게 보호
       publishState(state);
+
+      // 2. 현재 탭 UI는 저장 후의 최신 스냅샷을 적용
+      const latest = loadState() || state;
+      if (remoteControlInstance) {
+        remoteControlInstance.applyStateToView(latest);
+      }
     };
 
     const handleSessionEnd = () => {

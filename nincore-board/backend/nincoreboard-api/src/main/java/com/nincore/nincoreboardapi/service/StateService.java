@@ -90,6 +90,9 @@ public class StateService {
 
             switch (cmd.getType()) {
 
+                case "HOME_NAME" -> newState.setHomeName(cmd.getPayload());
+                case "HOME_SCORE" -> newState.setHomeScore(cmd.getPayload());
+                case "HOME_FOUL" -> newState.setHomeFoul(cmd.getPayload());
                 case "AWAY_NAME" -> newState.setAwayName(cmd.getPayload());
                 case "AWAY_SCORE" -> newState.setAwayScore(cmd.getPayload());
                 case "AWAY_FOUL" -> newState.setAwayFoul(cmd.getPayload());

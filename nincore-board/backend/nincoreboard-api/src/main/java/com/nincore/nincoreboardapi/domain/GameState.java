@@ -28,11 +28,15 @@ public class GameState {
     private JsonNode rosterPlayers;
 
     public void setPlayers(JsonNode players) {
-        if (players != null) this.players = players;
+        if (players == null) return;
+        if (isWeakTeamPayload(players) && hasTeamData(this.players)) return;
+        this.players = players;
     }
 
     public void setRosterPlayers(JsonNode rosterPlayers) {
-        if (rosterPlayers != null) this.rosterPlayers = rosterPlayers;
+        if (rosterPlayers == null) return;
+        if (isWeakTeamPayload(rosterPlayers) && hasTeamData(this.rosterPlayers)) return;
+        this.rosterPlayers = rosterPlayers;
     }
 
     public void setQuarter(int quarter) { this.quarter = quarter; }
@@ -134,6 +138,23 @@ public class GameState {
     public void resetAway(JsonNode payload) {
         this.awayName =  payload.get("awayName").asText();
         this.awayScore = payload.get("awayScore").asInt();
-        this.awayFoul = payload.get("AwayFoul").asInt();
+        this.awayFoul = payload.get("awayFoul").asInt();
+    }
+
+    private boolean hasTeamData(JsonNode node) {
+        if (node == null || !node.isObject()) return false;
+        JsonNode home = node.get("Home");
+        JsonNode away = node.get("Away");
+        return (home != null && home.isArray() && home.size() > 0)
+                || (away != null && away.isArray() && away.size() > 0);
+    }
+
+    private boolean isWeakTeamPayload(JsonNode node) {
+        if (node == null || !node.isObject()) return true;
+        JsonNode home = node.get("Home");
+        JsonNode away = node.get("Away");
+        boolean hasHome = home != null && home.isArray() && home.size() > 0;
+        boolean hasAway = away != null && away.isArray() && away.size() > 0;
+        return !(hasHome || hasAway);
     }
 }

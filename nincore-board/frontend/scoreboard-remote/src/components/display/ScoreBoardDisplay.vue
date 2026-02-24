@@ -75,7 +75,7 @@
 
 <script>
 import "./scoreboard-display.css";
-import { loadState } from "@/shared/stateChannel";
+import { loadState, clearPersistedState } from "@/shared/stateChannel";
 
 const CHANNEL = "nincore-scoreboard";
 const STORAGE_KEY = "nincore_scoreboard_state_v1";
@@ -133,7 +133,7 @@ export default {
 
         if (ev.data.type === "SHUTDOWN") {
           sessionStorage.clear();
-          localStorage.removeItem("nincore_scoreboard_state_v1");
+          clearPersistedState();
           window.location.href = "/";
           return;
         }

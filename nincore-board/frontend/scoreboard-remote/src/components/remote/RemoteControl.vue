@@ -37,8 +37,8 @@
             <div class="rc-time-grid rc-time-grid--row2">
               <div class="rc-time-cell rc-time-cell--left rc-time-cell--center">
                 <div class="rc-time-rowbtns">
-                  <button class="rc-btn rc-btn--mini" @click="changeQuarter(-1)" :disabled="quarter <= 1">-1</button>
-                  <button class="rc-btn rc-btn--mini" @click="changeQuarter(1)">+1</button>
+                  <button class="rc-btn rc-btn--mini" @click="changeQuarter(-1)" :disabled="quarter <= 1 || isGameRunning">-1</button>
+                  <button class="rc-btn rc-btn--mini" @click="changeQuarter(1)" :disabled="isGameRunning">+1</button>
                 </div>
               </div>
 
@@ -95,7 +95,7 @@
               <input
                   class="rc-input"
                   placeholder="Home"
-                  maxlength="4"
+                  maxlength="5"
                   v-model="homeName"
               />
               <div class="rc-team__scoretext">{{ teams.Home.homeScore }}</div>
@@ -246,7 +246,7 @@
               <input
                   class="rc-input"
                   placeholder="Away"
-                  maxlength="4"
+                  maxlength="5"
                   v-model="awayName"
               />
               <div class="rc-team__scoretext">{{ teams.Away.awayScore }}</div>
@@ -440,7 +440,7 @@
 import { disconnectWS, sendCommand } from "@/shared/wsClient";
 import "./remote-control.css";
 import { ActionType } from "@/shared/actionTypes";
-import { subscribeState, loadState, publishState } from "@/shared/stateChannel";
+import { subscribeState, loadState, publishState, clearPersistedState } from "@/shared/stateChannel";
 import {
   createScoreEvent,
   createScoreUndoEvent,
@@ -466,6 +466,45 @@ function debounce(func, delay) {
     clearTimeout(timeout);
     timeout = setTimeout(() => func.apply(context, args), delay);
   };
+}
+
+function toNoOrMax(value) {
+  const n = Number.parseInt(String(value ?? "").trim(), 10);
+  return Number.isNaN(n) ? Number.MAX_SAFE_INTEGER : n;
+}
+
+function comparePlayerNoAsc(a, b) {
+  const diff = toNoOrMax(a && a.no) - toNoOrMax(b && b.no);
+  if (diff !== 0) return diff;
+  const nameA = String((a && a.name) || "");
+  const nameB = String((b && b.name) || "");
+  return nameA.localeCompare(nameB, "ko");
+}
+
+function normalizeJerseyNo(value) {
+  const digits = String(value ?? "").replace(/[^0-9]/g, "").slice(0, 2);
+  if (!digits) return "";
+  return String(Number.parseInt(digits, 10));
+}
+
+function normalizePlayerList(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map((p) => ({ ...p, no: normalizeJerseyNo(p && p.no) }));
+}
+
+function normalizeTeamPlayersMap(map) {
+  if (!map || typeof map !== "object") return { Home: [], Away: [] };
+  return {
+    Home: normalizePlayerList(map.Home),
+    Away: normalizePlayerList(map.Away),
+  };
+}
+
+function hasTeamPlayers(map) {
+  if (!map || typeof map !== "object") return false;
+  const home = Array.isArray(map.Home) ? map.Home.length : 0;
+  const away = Array.isArray(map.Away) ? map.Away.length : 0;
+  return home > 0 || away > 0;
 }
 
 const hardcodedPlayers = [
@@ -542,8 +581,8 @@ export default {
     },
     computed: {
       activePlayers() {      return {
-        Home: (this.players.Home || []).slice().sort((a, b) => a.no - b.no),
-        Away: (this.players.Away || []).slice().sort((a, b) => a.no - b.no),
+        Home: (this.players.Home || []).slice().sort(comparePlayerNoAsc),
+        Away: (this.players.Away || []).slice().sort(comparePlayerNoAsc),
       };
     },
     homeName: {
@@ -606,10 +645,6 @@ export default {
     this.unsubscribe = subscribeState(this.applyStateToView);
     const initialState = loadState();
     if (initialState) {
-      // Filter out default names if they are coming from a persisted state
-      if (initialState.homeName === "Home") initialState.homeName = "";
-      if (initialState.awayName === "Away") initialState.awayName = "";
-
       this.applyStateToView(initialState);
     }
     this.connectedIp = (initialState && initialState.ip) || "";
@@ -715,15 +750,19 @@ export default {
       if (typeof state.gameTime === "number") this.gameClockSec = state.gameTime;
       if (typeof state.shotClock === "number") this.shotClockSec = state.shotClock;
 
-      if (typeof state.isGameRunning === "boolean") this.isGameRunning = state.isGameRunning;
+      // Prefer live server aliases first; persisted local fields can be stale.
+      if (typeof s.gameRunning === "boolean") this.isGameRunning = s.gameRunning;
+      else if (typeof s.isGameRunning === "boolean") this.isGameRunning = s.isGameRunning;
       else if (typeof s.gameIsRunning === "boolean") this.isGameRunning = s.gameIsRunning;
       else if (typeof s.isRunningGame === "boolean") this.isGameRunning = s.isRunningGame;
-      else if (typeof s.gameRunning === "boolean") this.isGameRunning = s.gameRunning;
+      else if (typeof state.isGameRunning === "boolean") this.isGameRunning = state.isGameRunning;
 
-      if (typeof state.isShotRunning === "boolean") this.isShotRunning = state.isShotRunning;
+      if (typeof s.shotClockRunning === "boolean") this.isShotRunning = s.shotClockRunning;
+      else if (typeof s.isShotClockRunning === "boolean") this.isShotRunning = s.isShotClockRunning;
+      else if (typeof s.shotRunning === "boolean") this.isShotRunning = s.shotRunning;
       else if (typeof s.shotIsRunning === "boolean") this.isShotRunning = s.shotIsRunning;
       else if (typeof s.isRunningShot === "boolean") this.isShotRunning = s.isRunningShot;
-      else if (typeof s.shotRunning === "boolean") this.isShotRunning = s.shotRunning;
+      else if (typeof state.isShotRunning === "boolean") this.isShotRunning = state.isShotRunning;
 
       if (Array.isArray(state.gameLog)) this.gameLog = normalizeGameLog(state.gameLog);
       if (state.everActivePlayerIds) {
@@ -749,10 +788,20 @@ export default {
       if (state.homeName !== undefined) this.teams.Home.homeName = state.homeName;
       if (state.awayName !== undefined) this.teams.Away.awayName = state.awayName;
       if (state.players) {
-        if (state.players.Home || state.players.Away) this.players = state.players;
+        if (state.players.Home || state.players.Away) {
+          const incomingPlayers = normalizeTeamPlayersMap(state.players);
+          if (hasTeamPlayers(incomingPlayers) || !hasTeamPlayers(this.players)) {
+            this.players = incomingPlayers;
+          }
+        }
       }
       if (state.rosterPlayers) {
-        if (state.rosterPlayers.Home || state.rosterPlayers.Away) this.rosterPlayers = state.rosterPlayers;
+        if (state.rosterPlayers.Home || state.rosterPlayers.Away) {
+          const incomingRoster = normalizeTeamPlayersMap(state.rosterPlayers);
+          if (hasTeamPlayers(incomingRoster) || !hasTeamPlayers(this.rosterPlayers)) {
+            this.rosterPlayers = incomingRoster;
+          }
+        }
       }
       if (state.homeAssists !== undefined) this.teams.Home.homeAssists = Number(state.homeAssists) || 0;
       if (state.homeRebounds !== undefined) this.teams.Home.homeRebounds = Number(state.homeRebounds) || 0;
@@ -886,6 +935,7 @@ export default {
       }
     },
     changeQuarter(delta) {
+      if (this.isGameRunning) return;
       const nextQuarter = this.quarter + delta;
       if (nextQuarter < 1) return;
       this.pushState(ActionType.QUARTER, { quarter: nextQuarter });
@@ -1169,7 +1219,7 @@ export default {
         // Ensure critical player properties from modal are always present
         const safePlayerFromModal = {
             id: playerFromModal.id,
-            no: playerFromModal.no || 0, // Default to 0 if not present
+            no: normalizeJerseyNo(playerFromModal.no),
             name: playerFromModal.name || '', // Default to empty string
             selected: playerFromModal.selected || false, // Default to false
         };
@@ -1182,20 +1232,39 @@ export default {
         };
       });
 
-      this.$set(this.rosterPlayers, team, newMasterRoster);
-      this.$set(this.players, team, newMasterRoster.filter(p => p.selected).slice(0, 5));
+      const sortedMasterRoster = newMasterRoster.slice().sort(comparePlayerNoAsc);
+      this.$set(this.rosterPlayers, team, sortedMasterRoster);
+      this.$set(this.players, team, sortedMasterRoster.filter(p => p.selected).slice(0, 5).sort(comparePlayerNoAsc));
 
       // Add newly active players to the set of all-time active players for the report
       this.players[team].forEach(p => this.everActivePlayerIds[team].add(p.id));
       this.recalculateTeamStats(team);
 
-      this.debouncedSyncState();
+      this.syncState();
       this.closeRoster();
     },
     syncState() {
       const fullState = this.buildFullStatePayload();
       publishState(fullState);
-      this.pushState(ActionType.STATE_UPDATE, fullState);
+      const serverSyncPayload = {
+        homeScore: fullState.homeScore,
+        homeFoul: fullState.homeFoul,
+        homeAssists: fullState.homeAssists,
+        homeRebounds: fullState.homeRebounds,
+        homeSteals: fullState.homeSteals,
+        awayScore: fullState.awayScore,
+        awayFoul: fullState.awayFoul,
+        awayAssists: fullState.awayAssists,
+        awayRebounds: fullState.awayRebounds,
+        awaySteals: fullState.awaySteals,
+        players: fullState.players,
+        rosterPlayers: fullState.rosterPlayers,
+        homeName: fullState.homeName,
+        awayName: fullState.awayName,
+        gameLog: fullState.gameLog,
+        everActivePlayerIds: fullState.everActivePlayerIds,
+      };
+      this.pushState(ActionType.STATE_UPDATE, serverSyncPayload);
     },
     recalculateTeamFouls(teamKey) {
       this.recalculateTeamStats(teamKey);
@@ -1284,6 +1353,7 @@ export default {
               this.broadcastShutdown();
               disconnectWS();
               sessionStorage.clear();
+              clearPersistedState();
               window.location.href = "/";
             })
             .catch(error => {
@@ -1292,6 +1362,7 @@ export default {
               this.broadcastShutdown();
               disconnectWS();
               sessionStorage.clear();
+              clearPersistedState();
               window.location.href = "/";
             });
       }

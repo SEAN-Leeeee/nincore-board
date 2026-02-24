@@ -117,6 +117,19 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { normalizeGameLog } from '@/shared/gameLogEvents';
 
+function toNoOrMax(value) {
+  const n = Number.parseInt(String(value ?? "").trim(), 10);
+  return Number.isNaN(n) ? Number.MAX_SAFE_INTEGER : n;
+}
+
+function comparePlayerNoAsc(a, b) {
+  const diff = toNoOrMax(a && a.no) - toNoOrMax(b && b.no);
+  if (diff !== 0) return diff;
+  const nameA = String((a && a.name) || "");
+  const nameB = String((b && b.name) || "");
+  return nameA.localeCompare(nameB, "ko");
+}
+
 export default {
   name: "GameReport",
   props: {
@@ -161,14 +174,14 @@ export default {
       const everActiveHomeIds = new Set(this.gameState.everActivePlayerIds.Home || []);
       return allHomePlayers
         .filter(p => everActiveHomeIds.has(p.id))
-        .sort((a, b) => (a.no || 0) - (b.no || 0));
+        .sort(comparePlayerNoAsc);
     },
     awayPlayersForReport() {
       const allAwayPlayers = this.gameState.rosterPlayers.Away || [];
       const everActiveAwayIds = new Set(this.gameState.everActivePlayerIds.Away || []);
       return allAwayPlayers
         .filter(p => everActiveAwayIds.has(p.id))
-        .sort((a, b) => (a.no || 0) - (b.no || 0));
+        .sort(comparePlayerNoAsc);
     },
     quarterlyStats() {
       const stats = {};

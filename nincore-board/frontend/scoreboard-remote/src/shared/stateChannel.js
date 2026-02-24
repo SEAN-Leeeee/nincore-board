@@ -1,5 +1,140 @@
 const CHANNEL = "nincore-scoreboard";
 const STORAGE_KEY = "nincore_scoreboard_state_v1";
+const BACKUP_KEY = "nincore_scoreboard_state_backup_v1";
+
+function isObject(value) {
+    return value && typeof value === "object" && !Array.isArray(value);
+}
+
+function parseJSON(raw) {
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch (e) {
+        return null;
+    }
+}
+
+function hasEntries(value) {
+    return isObject(value) && Object.keys(value).length > 0;
+}
+
+function hasPlayerData(players) {
+    if (!hasEntries(players)) return false;
+    const home = Array.isArray(players.Home) ? players.Home : [];
+    const away = Array.isArray(players.Away) ? players.Away : [];
+    return home.length > 0 || away.length > 0;
+}
+
+function hasRosterData(rosterPlayers) {
+    if (!hasEntries(rosterPlayers)) return false;
+    const home = Array.isArray(rosterPlayers.Home) ? rosterPlayers.Home : [];
+    const away = Array.isArray(rosterPlayers.Away) ? rosterPlayers.Away : [];
+    return home.length > 0 || away.length > 0;
+}
+
+function isDefaultTeamName(name) {
+    const text = String(name || "").trim().toLowerCase();
+    return text === "" || text === "home" || text === "away";
+}
+
+function hasNonDefaultTeamName(state) {
+    if (!isObject(state)) return false;
+    return !isDefaultTeamName(state.homeName) || !isDefaultTeamName(state.awayName);
+}
+
+function numericStateScore(state) {
+    if (!isObject(state)) return 0;
+    return (
+        Number(state.homeScore || 0) +
+        Number(state.awayScore || 0) +
+        Number(state.homeFoul || 0) +
+        Number(state.awayFoul || 0)
+    );
+}
+
+function isWeakIncomingState(state) {
+    if (!isObject(state)) return true;
+    const hasAnyPlayers = hasPlayerData(state.players);
+    const hasAnyRoster = hasRosterData(state.rosterPlayers);
+    const hasAnyLog = Array.isArray(state.gameLog) && state.gameLog.length > 0;
+    const hasAnyNumbers = numericStateScore(state) > 0;
+    const hasAnyNames = hasNonDefaultTeamName(state);
+    return !(hasAnyPlayers || hasAnyRoster || hasAnyLog || hasAnyNumbers || hasAnyNames);
+}
+
+function mergeState(prev, next) {
+    const left = isObject(prev) ? prev : {};
+    const right = isObject(next) ? next : {};
+    const merged = { ...left, ...right };
+
+    // Prevent weak payloads (often first WS sync) from wiping roster/player state.
+    if (!hasPlayerData(right.players) && hasPlayerData(left.players)) {
+        merged.players = left.players;
+    }
+    if (!hasRosterData(right.rosterPlayers) && hasRosterData(left.rosterPlayers)) {
+        merged.rosterPlayers = left.rosterPlayers;
+    }
+
+    // Keep meaningful team names when incoming payload contains defaults only.
+    if (isDefaultTeamName(right.homeName) && !isDefaultTeamName(left.homeName)) {
+        merged.homeName = left.homeName;
+    }
+    if (isDefaultTeamName(right.awayName) && !isDefaultTeamName(left.awayName)) {
+        merged.awayName = left.awayName;
+    }
+
+    // Hard guard: if incoming is effectively empty/default, keep previous full state.
+    if (isWeakIncomingState(right) && hasMeaningfulState(left)) {
+        return { ...left, ...right, 
+            players: left.players,
+            rosterPlayers: left.rosterPlayers,
+            gameLog: left.gameLog,
+            homeName: left.homeName,
+            awayName: left.awayName,
+            homeScore: left.homeScore,
+            awayScore: left.awayScore,
+            homeFoul: left.homeFoul,
+            awayFoul: left.awayFoul,
+            homeAssists: left.homeAssists,
+            homeRebounds: left.homeRebounds,
+            homeSteals: left.homeSteals,
+            awayAssists: left.awayAssists,
+            awayRebounds: left.awayRebounds,
+            awaySteals: left.awaySteals,
+        };
+    }
+
+    return merged;
+}
+
+function hasMeaningfulState(state) {
+    if (!isObject(state)) return false;
+
+    const homeScore = Number(state.homeScore || 0);
+    const awayScore = Number(state.awayScore || 0);
+    const homeFoul = Number(state.homeFoul || 0);
+    const awayFoul = Number(state.awayFoul || 0);
+    const gameLogCount = Array.isArray(state.gameLog) ? state.gameLog.length : 0;
+    const homePlayers = Array.isArray(state.players && state.players.Home) ? state.players.Home.length : 0;
+    const awayPlayers = Array.isArray(state.players && state.players.Away) ? state.players.Away.length : 0;
+    const homeRoster = Array.isArray(state.rosterPlayers && state.rosterPlayers.Home) ? state.rosterPlayers.Home.length : 0;
+    const awayRoster = Array.isArray(state.rosterPlayers && state.rosterPlayers.Away) ? state.rosterPlayers.Away.length : 0;
+    const hasTeamNames = hasNonDefaultTeamName(state);
+
+    return (
+        homeScore > 0 ||
+        awayScore > 0 ||
+        homeFoul > 0 ||
+        awayFoul > 0 ||
+        gameLogCount > 0 ||
+        homePlayers > 0 ||
+        awayPlayers > 0 ||
+        homeRoster > 0 ||
+        awayRoster > 0 ||
+        hasTeamNames
+    );
+}
 
 function getBC() {
     if (!window.__nincore_bc__) {
@@ -13,21 +148,34 @@ function getBC() {
 }
 
 export function loadState() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : null;
-    } catch (e) {
-        return null;
-    }
+    const primary = parseJSON(localStorage.getItem(STORAGE_KEY));
+    const backupPayload = parseJSON(localStorage.getItem(BACKUP_KEY));
+    const backup = isObject(backupPayload) ? backupPayload.state : null;
+
+    if (hasMeaningfulState(primary)) return primary;
+    if (hasMeaningfulState(backup)) return mergeState(backup, primary);
+    return primary || backup || null;
 }
 
 export function publishState(state) {
+    const previous = loadState();
+    const merged = mergeState(previous, state);
+
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        if (hasMeaningfulState(merged)) {
+            localStorage.setItem(
+                BACKUP_KEY,
+                JSON.stringify({
+                    updatedAt: Date.now(),
+                    state: merged,
+                })
+            );
+        }
     } catch (e) {}
 
     const bc = getBC();
-    if (bc) bc.postMessage({ type: "STATE", payload: state });
+    if (bc) bc.postMessage({ type: "STATE", payload: merged });
 }
 
 export function subscribeState(handler) {
@@ -42,4 +190,11 @@ export function subscribeState(handler) {
 
     bc.addEventListener("message", onMsg);
     return () => bc.removeEventListener("message", onMsg);
+}
+
+export function clearPersistedState() {
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(BACKUP_KEY);
+    } catch (e) {}
 }

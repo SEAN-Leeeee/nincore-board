@@ -35,6 +35,8 @@ public class ClockService {
                     currentState.minusShotClock(currentState.getShotClock() -1);
                     isStateChanged = true;
                 } else {
+                    // Shot clock reaches 0: behave like manual reset (24s, stopped)
+                    currentState.setShotClock(24);
                     currentState.stopShotClock(false);
                     isStateChanged = true;
                 }
