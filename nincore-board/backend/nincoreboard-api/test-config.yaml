@@ -1,0 +1,20 @@
+config:
+  target: 'http://localhost:8080'
+  phases:
+    - duration: 60
+      arrivalRate: 5
+    - duration: 60
+      arrivalRate: 20
+    - duration: 60
+      arrivalRate: 100
+    - duration: 60
+      arrivalRate: 20
+scenarios:
+  - flow:
+      - post:
+          url: "/api/login"
+          headers:
+            Content-Type: "application/json"
+          json:
+            ip: "12"
+            password: "12"

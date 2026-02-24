@@ -643,12 +643,12 @@ export default {
   mounted() {
     console.log(sessionStorage);
     this.unsubscribe = subscribeState(this.applyStateToView);
-    const initialState = loadState();
+    const initialState = loadState(this.$route?.params?.sessionId);
     if (initialState) {
       this.applyStateToView(initialState);
     }
-    this.connectedIp = (initialState && initialState.ip) || "";
-    this.sessionPassword = (initialState && initialState.password) || "";
+    this.connectedIp = sessionStorage.getItem("loginIp") || ((initialState && initialState.ip) || "");
+    this.sessionPassword = sessionStorage.getItem("loginPassword") || ((initialState && initialState.password) || "");
 
     // Hardcode players if connectedIp is "번희수"
     if (this.connectedIp === '번희수') {
@@ -742,9 +742,21 @@ export default {
       this.isReportModalVisible = false;
     },
     applyStateToView(s) {
-      // const sessionId = sessionStorage.getItem("sessionId"); // Commented out as it's no longer used for filtering initial load
-      if (!s) return; // Only check for null/undefined payload
+      if (!s) return;
+      const currentSessionId = String(this.$route?.params?.sessionId || sessionStorage.getItem("sessionId") || "").trim();
+      const incomingSessionId = String(s.sessionId || "").trim();
+      if (currentSessionId && incomingSessionId && currentSessionId !== incomingSessionId) {
+        return;
+      }
       const state = normalizeStateUpdatePayload(s);
+      if (typeof s.ip === "string" && s.ip.trim()) {
+        this.connectedIp = s.ip.trim();
+        sessionStorage.setItem("loginIp", this.connectedIp);
+      }
+      if (typeof s.password === "string" && s.password.trim()) {
+        this.sessionPassword = s.password.trim();
+        sessionStorage.setItem("loginPassword", this.sessionPassword);
+      }
 
       if (typeof state.quarter === "number") this.quarter = state.quarter;
       if (typeof state.gameTime === "number") this.gameClockSec = state.gameTime;

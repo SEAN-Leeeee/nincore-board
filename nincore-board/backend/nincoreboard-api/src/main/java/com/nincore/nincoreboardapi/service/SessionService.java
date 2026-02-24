@@ -30,7 +30,7 @@ public class SessionService {
 
     @Transactional(readOnly = true)
     public Optional<BoardSession> sessionExists(String ip, String password) {
-        return boardSessionRepository.findByIpAndPasswordAndIsDeletedFalse(ip, password);
+        return boardSessionRepository.findFirstByIpAndPasswordAndIsDeletedFalse(ip, password);
     }
 
     @Transactional

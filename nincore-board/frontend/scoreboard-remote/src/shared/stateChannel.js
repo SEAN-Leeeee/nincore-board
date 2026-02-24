@@ -1,6 +1,8 @@
 const CHANNEL = "nincore-scoreboard";
 const STORAGE_KEY = "nincore_scoreboard_state_v1";
 const BACKUP_KEY = "nincore_scoreboard_state_backup_v1";
+const STORAGE_KEY_PREFIX = `${STORAGE_KEY}:`;
+const BACKUP_KEY_PREFIX = `${BACKUP_KEY}:`;
 
 function isObject(value) {
     return value && typeof value === "object" && !Array.isArray(value);
@@ -147,10 +149,49 @@ function getBC() {
     return window.__nincore_bc__;
 }
 
-export function loadState() {
-    const primary = parseJSON(localStorage.getItem(STORAGE_KEY));
-    const backupPayload = parseJSON(localStorage.getItem(BACKUP_KEY));
+function getSessionIdFromPath() {
+    try {
+        const path = String(window.location && window.location.pathname ? window.location.pathname : "");
+        const match = path.match(/\/(?:remote|display)\/([^/?#]+)/i);
+        return match && match[1] ? String(match[1]) : "";
+    } catch (e) {
+        return "";
+    }
+}
+
+function getCurrentSessionId(state) {
+    if (state && state.sessionId !== undefined && state.sessionId !== null && String(state.sessionId).trim() !== "") {
+        return String(state.sessionId).trim();
+    }
+    try {
+        const fromSession = sessionStorage.getItem("sessionId");
+        if (fromSession && String(fromSession).trim() !== "") return String(fromSession).trim();
+    } catch (e) {}
+    return getSessionIdFromPath();
+}
+
+function buildStorageKey(prefix, sessionId) {
+    if (!sessionId) return `${prefix}global`;
+    return `${prefix}${sessionId}`;
+}
+
+export function loadState(targetSessionId) {
+    const sessionId = (targetSessionId !== undefined && targetSessionId !== null && String(targetSessionId).trim() !== "")
+        ? String(targetSessionId).trim()
+        : getCurrentSessionId();
+    const primaryKey = buildStorageKey(STORAGE_KEY_PREFIX, sessionId);
+    const backupKey = buildStorageKey(BACKUP_KEY_PREFIX, sessionId);
+
+    const primary = parseJSON(localStorage.getItem(primaryKey));
+    const backupPayload = parseJSON(localStorage.getItem(backupKey));
     const backup = isObject(backupPayload) ? backupPayload.state : null;
+
+    if (isObject(primary) && sessionId && (!primary.sessionId || String(primary.sessionId) !== sessionId)) {
+        primary.sessionId = sessionId;
+    }
+    if (isObject(backup) && sessionId && (!backup.sessionId || String(backup.sessionId) !== sessionId)) {
+        backup.sessionId = sessionId;
+    }
 
     if (hasMeaningfulState(primary)) return primary;
     if (hasMeaningfulState(backup)) return mergeState(backup, primary);
@@ -158,19 +199,21 @@ export function loadState() {
 }
 
 export function publishState(state) {
-    const previous = loadState();
-    const merged = mergeState(previous, state);
+    const sessionId = getCurrentSessionId(state);
+    const incoming = isObject(state) ? { ...state } : {};
+    if (sessionId && (!incoming.sessionId || String(incoming.sessionId).trim() === "")) {
+        incoming.sessionId = sessionId;
+    }
+
+    const previous = loadState(sessionId);
+    const merged = mergeState(previous, incoming);
+    const primaryKey = buildStorageKey(STORAGE_KEY_PREFIX, sessionId);
+    const backupKey = buildStorageKey(BACKUP_KEY_PREFIX, sessionId);
 
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        localStorage.setItem(primaryKey, JSON.stringify(merged));
         if (hasMeaningfulState(merged)) {
-            localStorage.setItem(
-                BACKUP_KEY,
-                JSON.stringify({
-                    updatedAt: Date.now(),
-                    state: merged,
-                })
-            );
+            localStorage.setItem(backupKey, JSON.stringify({ updatedAt: Date.now(), state: merged }));
         }
     } catch (e) {}
 
@@ -196,5 +239,15 @@ export function clearPersistedState() {
     try {
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(BACKUP_KEY);
+
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i += 1) {
+            const key = localStorage.key(i);
+            if (!key) continue;
+            if (key.startsWith(STORAGE_KEY_PREFIX) || key.startsWith(BACKUP_KEY_PREFIX)) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach((key) => localStorage.removeItem(key));
     } catch (e) {}
 }

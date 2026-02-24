@@ -24,7 +24,7 @@
 
 <script>
 import '@/assets/css/login.css';
-import { publishState, clearPersistedState, loadState } from '@/shared/stateChannel';
+import { publishState, clearPersistedState } from '@/shared/stateChannel';
 
 export default {
   name: 'LoginComponent',
@@ -83,20 +83,12 @@ export default {
           return;
         }
 
-        const stored = loadState();
-        const storedSessionId = String((stored && stored.sessionId) || "");
-        const incomingSessionId = String(result.sessionId);
-
-        // Session changed: prevent previous game's local data (gameLog/roster) from leaking.
-        if ((stored && !storedSessionId) || (storedSessionId && storedSessionId !== incomingSessionId)) {
-          clearPersistedState();
-        }
-
         sessionStorage.setItem('sessionId', result.sessionId);
+        sessionStorage.setItem('loginIp', this.ip);
+        sessionStorage.setItem('loginPassword', this.password);
 
-        if (result.isNewSession) {
-          clearPersistedState();
-        }
+        // Always start a login with a clean local record state.
+        clearPersistedState();
 
         // Save IP, password, and sessionId to state for RemoteControl to pick up
         publishState({

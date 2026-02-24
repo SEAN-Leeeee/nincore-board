@@ -8,7 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface BoardSessionRepository extends JpaRepository<BoardSession, Long> {
-    Optional<BoardSession> findByIpAndPasswordAndIsDeletedFalse(String ip, String password);
+    Optional<BoardSession> findFirstByIpAndPasswordAndIsDeletedFalse(String ip, String password);
 
     Optional<BoardSession> findByIdAndIsDeletedFalse(Long id);
 }

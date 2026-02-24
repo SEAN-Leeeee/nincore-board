@@ -78,7 +78,6 @@ import "./scoreboard-display.css";
 import { loadState, clearPersistedState } from "@/shared/stateChannel";
 
 const CHANNEL = "nincore-scoreboard";
-const STORAGE_KEY = "nincore_scoreboard_state_v1";
 
 export default {
   name: "ScoreBoardDisplay",
@@ -168,7 +167,7 @@ export default {
       } catch (e) {}
     },
     tryInitialStateLoad() {
-      const initialState = loadState();
+      const initialState = loadState(this.$route?.params?.sessionId);
       if (initialState) {
         this.applyStateToView(initialState);
       }
@@ -189,8 +188,12 @@ export default {
       this._initialLoadTimer = setTimeout(() => this.tryInitialStateLoad(), 200);
     },
     applyStateToView(s) {
-      // const sessionId = sessionStorage.getItem("sessionId"); // Commented out as it's no longer used for filtering initial load
-      if (!s) return; // Only check for null/undefined payload
+      if (!s) return;
+      const currentSessionId = String(this.$route?.params?.sessionId || sessionStorage.getItem("sessionId") || "").trim();
+      const incomingSessionId = String(s.sessionId || "").trim();
+      if (currentSessionId && incomingSessionId && currentSessionId !== incomingSessionId) {
+        return;
+      }
 
       if (typeof s.quarter === "number") this.quarter = s.quarter;
       if (typeof s.gameTime === "number") this.gameClockSec = s.gameTime;
@@ -272,4 +275,3 @@ export default {
   }
 };
 </script>
-c
