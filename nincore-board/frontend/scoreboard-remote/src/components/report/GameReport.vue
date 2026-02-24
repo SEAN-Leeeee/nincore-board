@@ -1,114 +1,78 @@
 <template>
   <div class="game-report-container">
     <div class="report-header">
-      <h1>즐농 기록지</h1>
+      <h1>경기 기록지</h1>
       <button @click="downloadPdf" class="print-button">PDF 다운로드</button>
     </div>
 
-    <div class="game-details">
-      <div class="team-info">
-        <span class="team-name home">{{ gameState.home.name }}</span>
-        <span class="final-score">{{ totalGameScore.home }} - {{ totalGameScore.away }}</span>
-        <span class="team-name away">{{ gameState.away.name }}</span>
-      </div>
-      <div class="game-meta">
-        <span><strong>Date:</strong> {{ new Date().toLocaleDateString() }}</span>
-      </div>
-    </div>
+    <section class="game-basic-info">
+      <div><strong>날짜:</strong> {{ dateText }}</div>
+      <div><strong>매치업:</strong> {{ homeTeamName }} : {{ awayTeamName }}</div>
+    </section>
 
-    <div class="team-stats-container">
-      <!-- Home Team Stats -->
-      <div class="team-sheet">
-        <h2>{{ gameState.home.name }}</h2>
-        <table class="player-stats-table">
-          <thead>
-            <tr>
-              <th>No.</th>
-              <th>Player</th>
-              <th>PTS</th>
-              <th>AST</th>
-              <th>REB</th>
-              <th>STL</th>
-              <th>FLS</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="player in homePlayersForReport" :key="player.id">
-              <td>{{ player.no }}</td>
-              <td>{{ player.name }}</td>
-              <td>{{ player.points }}</td>
-              <td>{{ player.assists }}</td>
-              <td>{{ player.rebounds }}</td>
-              <td>{{ player.steals }}</td>
-              <td>{{ player.fouls }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <section class="scoreboard-section">
+      <h2>쿼터별 스코어보드</h2>
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th>Team</th>
+            <th v-for="q in allQuarters" :key="`score-h-${q}`">{{ quarterLabel(q) }}</th>
+            <th>Total</th>
+            <th>Foul</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ homeTeamName }}</td>
+            <td v-for="q in allQuarters" :key="`score-home-${q}`">{{ teamQuarterScore('Home', q) }}</td>
+            <td>{{ teamTotalScore('Home') }}</td>
+            <td>{{ teamTotalFoul('Home') }}</td>
+          </tr>
+          <tr>
+            <td>{{ awayTeamName }}</td>
+            <td v-for="q in allQuarters" :key="`score-away-${q}`">{{ teamQuarterScore('Away', q) }}</td>
+            <td>{{ teamTotalScore('Away') }}</td>
+            <td>{{ teamTotalFoul('Away') }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
-      <!-- Away Team Stats -->
-      <div class="team-sheet">
-        <h2>{{ gameState.away.name }}</h2>
-        <table class="player-stats-table">
-          <thead>
-            <tr>
-              <th>No.</th>
-              <th>Player</th>
-              <th>PTS</th>
-              <th>AST</th>
-              <th>REB</th>
-              <th>STL</th>
-              <th>FLS</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="player in awayPlayersForReport" :key="player.id">
-              <td>{{ player.no }}</td>
-              <td>{{ player.name }}</td>
-              <td>{{ player.points }}</td>
-              <td>{{ player.assists }}</td>
-              <td>{{ player.rebounds }}</td>
-              <td>{{ player.steals }}</td>
-              <td>{{ player.fouls }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <section class="players-section">
+      <h2>개인별 기록</h2>
 
-    <div class="quarterly-summary">
-        <h2>쿼터별 요약</h2>
-        <table class="player-stats-table">
+      <div class="team-block" v-for="teamKey in ['Home', 'Away']" :key="`team-${teamKey}`">
+        <h3>{{ teamDisplayName(teamKey) }}</h3>
+
+        <div class="quarter-block" v-for="q in allQuarters" :key="`team-${teamKey}-q-${q}`">
+          <h4>{{ quarterLabel(q) }}</h4>
+          <table class="report-table">
             <thead>
-                <tr>
-                    <th>Team</th>
-                    <th v-for="q in allQuarters" :key="q">{{ q > 4 ? `OT${q - 4}` : `${q}Q` }}</th>
-                </tr>
+              <tr>
+                <th>No</th>
+                <th>이름</th>
+                <th>득점</th>
+                <th>파울</th>
+                <th>어시</th>
+                <th>스틸</th>
+                <th>리바</th>
+              </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>{{ gameState.home.name }} Score</td>
-                    <td v-for="q in allQuarters" :key="`home-score-${q}`">{{ quarterlyStats[q]?.home.score || 0 }}</td>
-                </tr>
-                <tr>
-                    <td>{{ gameState.home.name }} Fouls</td>
-                    <td v-for="q in allQuarters" :key="`home-foul-${q}`">{{ quarterlyStats[q]?.home.foul || 0 }}</td>
-                </tr>
-                <tr>
-                    <td>{{ gameState.away.name }} Score</td>
-                    <td v-for="q in allQuarters" :key="`away-score-${q}`">{{ quarterlyStats[q]?.away.score || 0 }}</td>
-                </tr>
-                <tr>
-                    <td>{{ gameState.away.name }} Fouls</td>
-                    <td v-for="q in allQuarters" :key="`away-foul-${q}`">{{ quarterlyStats[q]?.away.foul || 0 }}</td>
-                </tr>
+              <tr v-for="player in rosterByTeam[teamKey]" :key="`${teamKey}-${q}-${player.id || player.no || player.name}`">
+                <td>{{ displayNo(player.no) }}</td>
+                <td>{{ player.name || '-' }}</td>
+                <td>{{ playerStat(teamKey, q, player.id, 'points') }}</td>
+                <td>{{ playerStat(teamKey, q, player.id, 'fouls') }}</td>
+                <td>{{ playerStat(teamKey, q, player.id, 'assists') }}</td>
+                <td>{{ playerStat(teamKey, q, player.id, 'steals') }}</td>
+                <td>{{ playerStat(teamKey, q, player.id, 'rebounds') }}</td>
+              </tr>
             </tbody>
-        </table>
-    </div>
-
-    <div class="footer">
-      <p>Nincore Board - Official Game Record</p>
-    </div>
+          </table>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -118,201 +82,273 @@ import jsPDF from 'jspdf';
 import { normalizeGameLog } from '@/shared/gameLogEvents';
 
 function toNoOrMax(value) {
-  const n = Number.parseInt(String(value ?? "").trim(), 10);
+  const n = Number.parseInt(String(value ?? '').trim(), 10);
   return Number.isNaN(n) ? Number.MAX_SAFE_INTEGER : n;
 }
 
 function comparePlayerNoAsc(a, b) {
   const diff = toNoOrMax(a && a.no) - toNoOrMax(b && b.no);
   if (diff !== 0) return diff;
-  const nameA = String((a && a.name) || "");
-  const nameB = String((b && b.name) || "");
-  return nameA.localeCompare(nameB, "ko");
+  const nameA = String((a && a.name) || '');
+  const nameB = String((b && b.name) || '');
+  return nameA.localeCompare(nameB, 'ko');
+}
+
+function makeTeamQuarterAccumulator() {
+  return {
+    score: 0,
+    foul: 0,
+  };
+}
+
+function makePlayerQuarterAccumulator() {
+  return {
+    points: 0,
+    fouls: 0,
+    assists: 0,
+    steals: 0,
+    rebounds: 0,
+  };
 }
 
 export default {
-  name: "GameReport",
+  name: 'GameReport',
   props: {
     gameState: {
       type: Object,
       required: true,
       default: () => ({
-        home: { name: 'Home Team', foul: 0, players: [] },
-        away: { name: 'Away Team', foul: 0, players: [] },
+        home: { name: 'Home Team', score: 0, foul: 0 },
+        away: { name: 'Away Team', score: 0, foul: 0 },
         quarter: 1,
         gameLog: [],
-        everActivePlayerIds: {
-          Home: [],
-          Away: [],
-        },
-        rosterPlayers: {
-          Home: [],
-          Away: [],
-        },
-      })
-    }
+        rosterPlayers: { Home: [], Away: [] },
+      }),
+    },
   },
   computed: {
+    dateText() {
+      return new Date().toLocaleDateString();
+    },
+    homeTeamName() {
+      return String((this.gameState.home && this.gameState.home.name) || 'Home').trim() || 'Home';
+    },
+    awayTeamName() {
+      return String((this.gameState.away && this.gameState.away.name) || 'Away').trim() || 'Away';
+    },
     normalizedGameLog() {
       return normalizeGameLog(this.gameState.gameLog);
     },
     allQuarters() {
-      const quartersInLog = new Set(this.normalizedGameLog.map(e => e.quarter));
-      const maxQuarter = Math.max(1, this.gameState.quarter, ...quartersInLog);
+      const quartersInLog = new Set(
+        this.normalizedGameLog
+          .map((e) => Number(e.quarter) || 1)
+          .filter((q) => q > 0)
+      );
 
-      const allQuarters = new Set();
-      for (let i = 1; i <= maxQuarter; i++) {
-        allQuarters.add(i);
-      }
-      quartersInLog.forEach(q => allQuarters.add(q));
+      const maxQuarter = Math.max(4, Number(this.gameState.quarter) || 1, ...quartersInLog);
+      const out = [];
+      for (let i = 1; i <= maxQuarter; i += 1) out.push(i);
+      return out;
+    },
+    rosterByTeam() {
+      const homeRoster = Array.isArray(this.gameState.rosterPlayers && this.gameState.rosterPlayers.Home)
+        ? this.gameState.rosterPlayers.Home
+        : [];
+      const awayRoster = Array.isArray(this.gameState.rosterPlayers && this.gameState.rosterPlayers.Away)
+        ? this.gameState.rosterPlayers.Away
+        : [];
 
-      return Array.from(allQuarters).sort((a, b) => a - b);
+      return {
+        Home: homeRoster.slice().sort(comparePlayerNoAsc),
+        Away: awayRoster.slice().sort(comparePlayerNoAsc),
+      };
     },
-    // Filter players who were ever on the active roster
-    homePlayersForReport() {
-      const allHomePlayers = this.gameState.rosterPlayers.Home || [];
-      const everActiveHomeIds = new Set(this.gameState.everActivePlayerIds.Home || []);
-      return allHomePlayers
-        .filter(p => everActiveHomeIds.has(p.id))
-        .sort(comparePlayerNoAsc);
-    },
-    awayPlayersForReport() {
-      const allAwayPlayers = this.gameState.rosterPlayers.Away || [];
-      const everActiveAwayIds = new Set(this.gameState.everActivePlayerIds.Away || []);
-      return allAwayPlayers
-        .filter(p => everActiveAwayIds.has(p.id))
-        .sort(comparePlayerNoAsc);
-    },
-    quarterlyStats() {
-      const stats = {};
+    teamQuarterStats() {
+      const stats = {
+        Home: {},
+        Away: {},
+      };
 
-      this.allQuarters.forEach(q => {
-        stats[q] = {
-          home: { score: 0, foul: 0 },
-          away: { score: 0, foul: 0 },
-        };
+      this.allQuarters.forEach((q) => {
+        stats.Home[q] = makeTeamQuarterAccumulator();
+        stats.Away[q] = makeTeamQuarterAccumulator();
       });
 
       this.normalizedGameLog.forEach((event) => {
-        const { quarter, kind, teamKey, payload } = event;
-        if (!stats[quarter]) return;
+        const q = Number(event.quarter) || 1;
+        const teamKey = event.teamKey === 'Away' ? 'Away' : 'Home';
+        if (!stats[teamKey][q]) stats[teamKey][q] = makeTeamQuarterAccumulator();
 
-        const side = teamKey === 'Home' ? 'home' : 'away';
-
-        if (kind === 'SCORE' || kind === 'SCORE_UNDO') {
-          stats[quarter][side].score += Number(payload && payload.delta) || 0;
-        } else if (kind === 'FOUL') {
-          stats[quarter][side].foul += Number(payload && payload.delta) || 0;
-        } else if (kind === 'STAT_UNDO' && payload && payload.statKind === 'FOUL') {
-          stats[quarter][side].foul += Number(payload.delta) || 0;
+        const payload = event.payload || {};
+        if (event.kind === 'SCORE' || event.kind === 'SCORE_UNDO') {
+          stats[teamKey][q].score += Number(payload.delta) || 0;
+        } else if (event.kind === 'FOUL') {
+          stats[teamKey][q].foul += Number(payload.delta) || 0;
+        } else if (event.kind === 'STAT_UNDO' && payload.statKind === 'FOUL') {
+          stats[teamKey][q].foul += Number(payload.delta) || 0;
         }
       });
+
       return stats;
     },
-    totalGameScore() {
-      const homeScore = this.normalizedGameLog
-          .filter((e) => (e.kind === 'SCORE' || e.kind === 'SCORE_UNDO') && e.teamKey === 'Home')
-          .reduce((acc, e) => acc + (Number(e.payload && e.payload.delta) || 0), 0);
-      const awayScore = this.normalizedGameLog
-          .filter((e) => (e.kind === 'SCORE' || e.kind === 'SCORE_UNDO') && e.teamKey === 'Away')
-          .reduce((acc, e) => acc + (Number(e.payload && e.payload.delta) || 0), 0);
+    playerQuarterStats() {
+      const stats = {
+        Home: {},
+        Away: {},
+      };
 
-      if (homeScore === 0 && awayScore === 0) {
-        return {
-          home: this.gameState.home.score,
-          away: this.gameState.away.score,
-        };
-      }
+      this.allQuarters.forEach((q) => {
+        stats.Home[q] = {};
+        stats.Away[q] = {};
+      });
 
-      return { home: homeScore, away: awayScore };
-    }
+      const ensurePlayer = (teamKey, quarter, playerId) => {
+        if (!stats[teamKey][quarter]) stats[teamKey][quarter] = {};
+        if (!stats[teamKey][quarter][playerId]) {
+          stats[teamKey][quarter][playerId] = makePlayerQuarterAccumulator();
+        }
+        return stats[teamKey][quarter][playerId];
+      };
+
+      this.normalizedGameLog.forEach((event) => {
+        const q = Number(event.quarter) || 1;
+        const teamKey = event.teamKey === 'Away' ? 'Away' : 'Home';
+        const playerId = event.playerId;
+        if (!playerId) return;
+
+        const bucket = ensurePlayer(teamKey, q, playerId);
+        const payload = event.payload || {};
+        const delta = Number(payload.delta) || 0;
+
+        if (event.kind === 'SCORE' || event.kind === 'SCORE_UNDO') {
+          bucket.points += delta;
+        } else if (event.kind === 'FOUL') {
+          bucket.fouls += delta;
+        } else if (event.kind === 'ASSIST') {
+          bucket.assists += delta;
+        } else if (event.kind === 'STEAL') {
+          bucket.steals += delta;
+        } else if (event.kind === 'REBOUND') {
+          bucket.rebounds += delta;
+        } else if (event.kind === 'STAT_UNDO') {
+          if (payload.statKind === 'FOUL') bucket.fouls += delta;
+          if (payload.statKind === 'ASSIST') bucket.assists += delta;
+          if (payload.statKind === 'STEAL') bucket.steals += delta;
+          if (payload.statKind === 'REBOUND') bucket.rebounds += delta;
+        }
+      });
+
+      return stats;
+    },
   },
   methods: {
+    quarterLabel(q) {
+      return q <= 4 ? `${q}Q` : `${q}Q`;
+    },
+    teamDisplayName(teamKey) {
+      return teamKey === 'Home' ? this.homeTeamName : this.awayTeamName;
+    },
+    displayNo(no) {
+      const n = Number.parseInt(String(no ?? '').trim(), 10);
+      return Number.isNaN(n) ? '-' : n;
+    },
+    teamQuarterScore(teamKey, q) {
+      const value = this.teamQuarterStats[teamKey] && this.teamQuarterStats[teamKey][q]
+        ? this.teamQuarterStats[teamKey][q].score
+        : 0;
+      return Number(value) || 0;
+    },
+    teamTotalScore(teamKey) {
+      const sumFromLog = this.allQuarters.reduce((acc, q) => acc + this.teamQuarterScore(teamKey, q), 0);
+      if (sumFromLog !== 0) return sumFromLog;
+      return teamKey === 'Home'
+        ? Number((this.gameState.home && this.gameState.home.score) || 0)
+        : Number((this.gameState.away && this.gameState.away.score) || 0);
+    },
+    teamTotalFoul(teamKey) {
+      const sumFromLog = this.allQuarters.reduce((acc, q) => {
+        const foul = this.teamQuarterStats[teamKey] && this.teamQuarterStats[teamKey][q]
+          ? this.teamQuarterStats[teamKey][q].foul
+          : 0;
+        return acc + (Number(foul) || 0);
+      }, 0);
+      if (sumFromLog !== 0) return sumFromLog;
+      return teamKey === 'Home'
+        ? Number((this.gameState.home && this.gameState.home.foul) || 0)
+        : Number((this.gameState.away && this.gameState.away.foul) || 0);
+    },
+    playerStat(teamKey, quarter, playerId, field) {
+      const team = this.playerQuarterStats[teamKey] || {};
+      const q = team[quarter] || {};
+      const stat = q[playerId] || makePlayerQuarterAccumulator();
+      return Number(stat[field]) || 0;
+    },
     async downloadPdf() {
-      const reportElement = this.$el; // The root element of the component
-
-      // Temporarily hide the print button for the screenshot
+      const reportElement = this.$el;
       const printButton = reportElement.querySelector('.print-button');
       if (printButton) printButton.style.display = 'none';
 
       try {
-        const targetCaptureWidthPx = 780; // Example target pixel width for capture, adjust as needed.
+        const targetCaptureWidthPx = 780;
 
         const canvas = await html2canvas(reportElement, {
-            scale: 2, // Higher scale for better resolution
-            useCORS: true, // Important for images, fonts
-            logging: true, // Enable logging for debugging html2canvas
-            width: targetCaptureWidthPx, // Force capture width
-            windowWidth: targetCaptureWidthPx // Ensure window context matches capture width
+          scale: 2,
+          useCORS: true,
+          logging: true,
+          width: targetCaptureWidthPx,
+          windowWidth: targetCaptureWidthPx,
         });
 
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
 
-        const pdfWidth = pdf.internal.pageSize.getWidth(); // A4 width in mm (210mm)
-        const pdfHeight = pdf.internal.pageSize.getHeight(); // A4 height in mm (297mm)
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
 
-        const imgCanvasWidth = canvas.width; // Actual width of the generated canvas (targetCaptureWidthPx * scale)
-        const imgCanvasHeight = canvas.height; // Actual height of the generated canvas
-
+        const imgCanvasWidth = canvas.width;
+        const imgCanvasHeight = canvas.height;
         const aspectRatio = imgCanvasWidth / imgCanvasHeight;
 
-        // Desired content width in PDF, leaving margins
-        const targetPdfContentWidth = 190; // mm, e.g., 210mm - 2*10mm margin
-        const marginX = (pdfWidth - targetPdfContentWidth) / 2; // Center horizontally
-        const marginY = 10; // Top/bottom margin in mm
+        const targetPdfContentWidth = 190;
+        const marginX = (pdfWidth - targetPdfContentWidth) / 2;
+        const marginY = 10;
 
         let imgDisplayWidth = targetPdfContentWidth;
-        let imgDisplayHeight = imgDisplayWidth / aspectRatio; // Height scaled to targetPdfContentWidth
+        let imgDisplayHeight = imgDisplayWidth / aspectRatio;
 
-        let heightRendered = 0; // Total height of the image that has been rendered in mm
+        let heightRendered = 0;
         let pageNumber = 0;
 
         while (heightRendered < imgDisplayHeight) {
-            if (pageNumber > 0) {
-                pdf.addPage();
-            }
+          if (pageNumber > 0) {
+            pdf.addPage();
+          }
 
-            // Calculate the Y position to draw the image on the current page.
-            // It's a negative offset of what's already rendered, plus the top margin for each new page.
-            const yPositionOnPage = -heightRendered + marginY;
+          const yPositionOnPage = -heightRendered + marginY;
 
-            pdf.addImage(
-                imgData,
-                'PNG',
-                marginX,
-                yPositionOnPage,
-                imgDisplayWidth,
-                imgDisplayHeight
-            );
+          pdf.addImage(
+            imgData,
+            'PNG',
+            marginX,
+            yPositionOnPage,
+            imgDisplayWidth,
+            imgDisplayHeight
+          );
 
-            // Advance the heightRendered by the usable height of a PDF page
-            heightRendered += (pdfHeight - (2 * marginY)); // Usable page height for content
-            pageNumber++;
+          heightRendered += (pdfHeight - (2 * marginY));
+          pageNumber += 1;
         }
 
-        // --- Blob-based download workaround ---
-        const pdfBlob = pdf.output('blob');
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-
-        const a = document.createElement('a');
-        a.href = pdfUrl;
-        a.download = 'game_report.pdf';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(pdfUrl); // Clean up the object URL
-        // --- End workaround ---
-
+        pdf.save(`game-report-${new Date().toISOString().slice(0, 10)}.pdf`);
       } catch (error) {
         console.error('Error generating PDF:', error);
-        alert('PDF 생성 중 오류가 발생했습니다. 자세한 내용은 콘솔을 확인해주세요.');
+        alert('PDF 생성 중 오류가 발생했습니다.');
       } finally {
-        // Restore the print button visibility
         if (printButton) printButton.style.display = '';
       }
-    }
-  }
+    },
+  },
 };
 </script>
 

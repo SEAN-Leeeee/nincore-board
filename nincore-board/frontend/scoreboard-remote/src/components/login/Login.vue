@@ -24,7 +24,7 @@
 
 <script>
 import '@/assets/css/login.css';
-import { publishState, clearPersistedState } from '@/shared/stateChannel';
+import { publishState, clearPersistedState, loadState } from '@/shared/stateChannel';
 
 export default {
   name: 'LoginComponent',
@@ -81,6 +81,15 @@ export default {
           this.error = "로그인 실패: 서버로부터 유효하지 않은 세션 ID를 받았습니다.";
           console.error("Invalid login response:", result);
           return;
+        }
+
+        const stored = loadState();
+        const storedSessionId = String((stored && stored.sessionId) || "");
+        const incomingSessionId = String(result.sessionId);
+
+        // Session changed: prevent previous game's local data (gameLog/roster) from leaking.
+        if ((stored && !storedSessionId) || (storedSessionId && storedSessionId !== incomingSessionId)) {
+          clearPersistedState();
         }
 
         sessionStorage.setItem('sessionId', result.sessionId);
