@@ -10,7 +10,9 @@ import java.util.function.Consumer;
 @Entity
 @Getter
 @NoArgsConstructor
-public class BoardSession {
+@Table(indexes = {
+        @Index(name = "idx_board_session_ip_password", columnList = "ip, password, isDeleted")
+})public class BoardSession {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
