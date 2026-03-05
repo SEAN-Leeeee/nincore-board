@@ -98,7 +98,8 @@ export default {
       homePlayers: [],
       awayPlayers: [],
       scale: 1,
-      fullScreenMode: false, // New data property
+      fullScreenMode: false,
+      isMobile: false,
       _bc: null,
       _onMsg: null,
       _initialLoadTimer: null,
@@ -107,6 +108,17 @@ export default {
   },
   computed: {
     skinStyle() {
+      if (this.isMobile) {
+        return {
+          width: '100vw',
+          height: '100vh',
+          transform: 'none',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          padding: 0
+        };
+      }
       return {
         width: this.baseW + "px",
         height: this.baseH + "px",
@@ -250,6 +262,12 @@ export default {
     updateScale() {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
+      this.isMobile = vw < 950;
+
+      // Force fullScreenMode on mobile initially
+      if (this.isMobile && this._initialLoadAttempts === 0) {
+        this.fullScreenMode = true;
+      }
 
       let s = 1;
       if (this.fullScreenMode) {
