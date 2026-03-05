@@ -1,14 +1,10 @@
 config:
   target: 'http://localhost:8080'
   phases:
+    - duration: 10
+      arrivalRate: 1
     - duration: 60
       arrivalRate: 5
-    - duration: 60
-      arrivalRate: 20
-    - duration: 60
-      arrivalRate: 100
-    - duration: 60
-      arrivalRate: 20
 scenarios:
   - flow:
       - post:
@@ -16,5 +12,6 @@ scenarios:
           headers:
             Content-Type: "application/json"
           json:
-            ip: "12"
-            password: "12"
+            ip: "test_{{ $randomNumber(1, 99999) }}"
+            password: "load_test"
+

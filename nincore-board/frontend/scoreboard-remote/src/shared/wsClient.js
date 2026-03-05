@@ -1,6 +1,6 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
-import { publishState } from "./stateChannel";
+import { publishState, loadState } from "./stateChannel";
 
 let client = null;
 let sessionId = null;
@@ -47,7 +47,16 @@ export function connectWS(currentSessionId, onState, onSessionEnd) {
                 }
             });
 
-            requestCurrentState();
+            // If we are on a remote/control view, we might have better data than the server.
+            // Let's push our meaningful state to the server right after connecting.
+            const local = loadState(sessionId);
+            const isRemote = window.location.pathname.includes('/remote/');
+            if (isRemote && local && Object.keys(local).length > 0) {
+                console.log("Pushing local state to server after reconnect...");
+                sendCommand("STATE_UPDATE", local, sessionId);
+            } else {
+                requestCurrentState();
+            }
         },
         onDisconnect: () => {
             console.log("WebSocket Disconnected!" + sessionId);

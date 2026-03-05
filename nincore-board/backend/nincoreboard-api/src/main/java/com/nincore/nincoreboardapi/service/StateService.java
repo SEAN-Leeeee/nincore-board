@@ -55,10 +55,18 @@ public class StateService {
                 .awayScore(0)
                 .homeFoul(0)
                 .awayFoul(0)
+                .homeAssists(0)
+                .homeRebounds(0)
+                .homeSteals(0)
+                .awayAssists(0)
+                .awayRebounds(0)
+                .awaySteals(0)
                 .gameTime(7 * 60)
                 .shotClock(24)
                 .players(JsonNodeFactory.instance.objectNode())
                 .rosterPlayers(JsonNodeFactory.instance.objectNode())
+                .gameLog(JsonNodeFactory.instance.arrayNode())
+                .everActivePlayerIds(JsonNodeFactory.instance.objectNode())
                 .build();
     }
 
@@ -108,7 +116,14 @@ public class StateService {
                 case "RESET_AWAY" -> newState.resetAway(cmd.getPayload());
                 case "STATE_UPDATE" -> {
                     JsonNode payload = cmd.getPayload();
-                    if (payload.has("quarter")) newState.setQuarter(payload.get("quarter").asInt());
+                    if (payload.has("quarter")) {
+                        int nextQuarter = payload.get("quarter").asInt();
+                        if (nextQuarter != newState.getQuarter()) {
+                            newState.setQuarter(nextQuarter);
+                            newState.setHomeFoul(0);
+                            newState.setAwayFoul(0);
+                        }
+                    }
                     if (payload.has("gameTime")) newState.setGameTime(payload.get("gameTime").asInt());
                     if (payload.has("isGameRunning"))
                         newState.setIsGameRunning(payload.get("isGameRunning").asBoolean());
@@ -118,11 +133,19 @@ public class StateService {
                     if (payload.has("homeName")) newState.setHomeName(payload.get("homeName").asText());
                     if (payload.has("homeScore")) newState.setHomeScore(payload.get("homeScore").asInt());
                     if (payload.has("homeFoul")) newState.setHomeFoul(payload.get("homeFoul").asInt());
+                    if (payload.has("homeAssists")) newState.setHomeAssists(payload.get("homeAssists").asInt());
+                    if (payload.has("homeRebounds")) newState.setHomeRebounds(payload.get("homeRebounds").asInt());
+                    if (payload.has("homeSteals")) newState.setHomeSteals(payload.get("homeSteals").asInt());
                     if (payload.has("awayName")) newState.setAwayName(payload.get("awayName").asText());
                     if (payload.has("awayScore")) newState.setAwayScore(payload.get("awayScore").asInt());
                     if (payload.has("awayFoul")) newState.setAwayFoul(payload.get("awayFoul").asInt());
+                    if (payload.has("awayAssists")) newState.setAwayAssists(payload.get("awayAssists").asInt());
+                    if (payload.has("awayRebounds")) newState.setAwayRebounds(payload.get("awayRebounds").asInt());
+                    if (payload.has("awaySteals")) newState.setAwaySteals(payload.get("awaySteals").asInt());
                     if (payload.has("players")) newState.setPlayers(payload.get("players"));
                     if (payload.has("rosterPlayers")) newState.setRosterPlayers(payload.get("rosterPlayers"));
+                    if (payload.has("gameLog")) newState.setGameLog(payload.get("gameLog"));
+                    if (payload.has("everActivePlayerIds")) newState.setEverActivePlayerIds(payload.get("everActivePlayerIds"));
                 }
                 default -> log.warn("처리되지 않은 ActionType 입니다: {} ", cmd.getType());
             }

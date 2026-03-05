@@ -21,11 +21,19 @@ public class GameState {
     private  String homeName;
     private int homeScore;
     private int homeFoul;
+    private int homeAssists;
+    private int homeRebounds;
+    private int homeSteals;
     private String awayName;
     private int awayScore;
     private int awayFoul;
+    private int awayAssists;
+    private int awayRebounds;
+    private int awaySteals;
     private JsonNode players;
     private JsonNode rosterPlayers;
+    private JsonNode gameLog;
+    private JsonNode everActivePlayerIds;
 
     public void setPlayers(JsonNode players) {
         if (players == null) return;
@@ -47,9 +55,31 @@ public class GameState {
     public void setHomeName(String homeName) { this.homeName = homeName; }
     public void setHomeScore(int homeScore) { this.homeScore = homeScore; }
     public void setHomeFoul(int homeFoul) { this.homeFoul = homeFoul; }
+    public void setHomeAssists(int homeAssists) { this.homeAssists = homeAssists; }
+    public void setHomeRebounds(int homeRebounds) { this.homeRebounds = homeRebounds; }
+    public void setHomeSteals(int homeSteals) { this.homeSteals = homeSteals; }
     public void setAwayName(String awayName) { this.awayName = awayName; }
     public void setAwayScore(int awayScore) { this.awayScore = awayScore; }
     public void setAwayFoul(int awayFoul) { this.awayFoul = awayFoul; }
+    public void setAwayAssists(int awayAssists) { this.awayAssists = awayAssists; }
+    public void setAwayRebounds(int awayRebounds) { this.awayRebounds = awayRebounds; }
+    public void setAwaySteals(int awaySteals) { this.awaySteals = awaySteals; }
+    public void setGameLog(JsonNode gameLog) {
+        if (gameLog == null || (gameLog.isArray() && gameLog.size() == 0 && this.gameLog != null && this.gameLog.size() > 0)) {
+            return;
+        }
+        this.gameLog = gameLog;
+    }
+    public void setEverActivePlayerIds(JsonNode everActivePlayerIds) {
+        if (everActivePlayerIds == null || (!hasEntries(everActivePlayerIds) && hasEntries(this.everActivePlayerIds))) {
+            return;
+        }
+        this.everActivePlayerIds = everActivePlayerIds;
+    }
+
+    private boolean hasEntries(JsonNode node) {
+        return node != null && node.isObject() && node.size() > 0;
+    }
 
     public void minusGameTime(int i) {
         this.gameTime = i;

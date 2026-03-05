@@ -204,11 +204,11 @@ export default {
 
       this.homeTeamName = homeName || this.homeTeamName || "HOME";
       this.homeScore = Number(s.homeScore ?? this.homeScore);
-      this.homeTeamFouls = Number(s.homeFoul ?? this.homeTeamFouls);
+      this.homeTeamFouls = Math.min(5, Number(s.homeFoul ?? this.homeTeamFouls));
 
       this.awayTeamName = awayName || this.awayTeamName || "AWAY";
       this.awayScore = Number(s.awayScore ?? this.awayScore);
-      this.awayTeamFouls = Number(s.awayFoul ?? this.awayTeamFouls);
+      this.awayTeamFouls = Math.min(5, Number(s.awayFoul ?? this.awayTeamFouls));
 
       const players = s.players || {};
       const rosterPlayers = s.rosterPlayers || {};

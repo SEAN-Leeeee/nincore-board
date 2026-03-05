@@ -60,7 +60,9 @@ function isWeakIncomingState(state) {
     const hasAnyPlayers = hasPlayerData(state.players);
     const hasAnyRoster = hasRosterData(state.rosterPlayers);
     const hasAnyLog = Array.isArray(state.gameLog) && state.gameLog.length > 0;
-    const hasAnyNumbers = numericStateScore(state) > 0;
+    const hasAnyNumbers = numericStateScore(state) > 0 || 
+        Number(state.homeAssists || 0) > 0 || Number(state.homeRebounds || 0) > 0 || Number(state.homeSteals || 0) > 0 ||
+        Number(state.awayAssists || 0) > 0 || Number(state.awayRebounds || 0) > 0 || Number(state.awaySteals || 0) > 0;
     const hasAnyNames = hasNonDefaultTeamName(state);
     return !(hasAnyPlayers || hasAnyRoster || hasAnyLog || hasAnyNumbers || hasAnyNames);
 }
@@ -76,6 +78,9 @@ function mergeState(prev, next) {
     }
     if (!hasRosterData(right.rosterPlayers) && hasRosterData(left.rosterPlayers)) {
         merged.rosterPlayers = left.rosterPlayers;
+    }
+    if ((!right.gameLog || right.gameLog.length === 0) && (left.gameLog && left.gameLog.length > 0)) {
+        merged.gameLog = left.gameLog;
     }
 
     // Keep meaningful team names when incoming payload contains defaults only.
@@ -117,6 +122,12 @@ function hasMeaningfulState(state) {
     const awayScore = Number(state.awayScore || 0);
     const homeFoul = Number(state.homeFoul || 0);
     const awayFoul = Number(state.awayFoul || 0);
+    const homeAssists = Number(state.homeAssists || 0);
+    const homeRebounds = Number(state.homeRebounds || 0);
+    const homeSteals = Number(state.homeSteals || 0);
+    const awayAssists = Number(state.awayAssists || 0);
+    const awayRebounds = Number(state.awayRebounds || 0);
+    const awaySteals = Number(state.awaySteals || 0);
     const gameLogCount = Array.isArray(state.gameLog) ? state.gameLog.length : 0;
     const homePlayers = Array.isArray(state.players && state.players.Home) ? state.players.Home.length : 0;
     const awayPlayers = Array.isArray(state.players && state.players.Away) ? state.players.Away.length : 0;
@@ -129,6 +140,12 @@ function hasMeaningfulState(state) {
         awayScore > 0 ||
         homeFoul > 0 ||
         awayFoul > 0 ||
+        homeAssists > 0 ||
+        homeRebounds > 0 ||
+        homeSteals > 0 ||
+        awayAssists > 0 ||
+        awayRebounds > 0 ||
+        awaySteals > 0 ||
         gameLogCount > 0 ||
         homePlayers > 0 ||
         awayPlayers > 0 ||

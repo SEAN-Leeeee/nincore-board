@@ -126,7 +126,7 @@
 
                   <div class="rc-team__meta-row">
                     <div class="rc-meta-label">팀 파울</div>
-                    <div class="rc-meta-value">{{ teams.Home.homeFoul }}</div>
+                    <div class="rc-meta-value">{{ Math.min(5, teams.Home.homeFoul) }}</div>
                   </div>
 
 
@@ -276,7 +276,7 @@
                 <div>
                   <div class="rc-team__meta-row">
                     <div class="rc-meta-label">팀 파울</div>
-                    <div class="rc-meta-value">{{ teams.Away.awayFoul }}</div>
+                    <div class="rc-meta-value">{{ Math.min(5, teams.Away.awayFoul) }}</div>
                   </div>
 
 
@@ -513,23 +513,28 @@ const hardcodedPlayers = [
   { no: 3, name: "임지수" },
   { no: 4, name: "이시연" },
   { no: 5, name: "김민정" },
-  { no: 33, name: "한유정" },
+  { no: 6, name: "나선일" },
   { no: 7, name: "한지행" },
   { no: 8, name: "이슬기" },
-  { no: 11, name: "조세핀" },
+  { no: 9, name: "신혜원" },
+  { no: 10, name: "아코" },
+  { no: 11, name: "유길선" },
+  { no: 12, name: "서지혜" },
+  { no: 13, name: "박진서" },
   { no: 14, name: "최찬영" },
   { no: 15, name: "박민영" },
+  { no: 16, name: "찬미" },
+  { no: 17, name: "한유정" },
+  { no: 18, name: "홍신애" },
+  { no: 19, name: "황선오" },
+  { no: 21, name: "송은혜" },
   { no: 66, name: "이담비" },
   { no: 91, name: "박구원" },
-  { no: 0, name: "아코" },
-  { no: 0o0, name: "홍신애" },
-  { no: 99, name: "나선일" },
-  { no: 9, name: "황선오" },
 ].map((p, index) => ({
-  id: `player_${p.no}_${p.name}_${Math.random().toString(36).substr(2, 9)}`, // Generate a unique ID with random suffix
+  id: `player_${p.no}_${p.name}_${Math.random().toString(36).substr(2, 9)}`,
   no: p.no,
   name: p.name,
-  selected: false, // No players selected by default
+  selected: false,
   points: 0,
   assists: 0,
   rebounds: 0,
@@ -650,12 +655,15 @@ export default {
     this.connectedIp = sessionStorage.getItem("loginIp") || ((initialState && initialState.ip) || "");
     this.sessionPassword = sessionStorage.getItem("loginPassword") || ((initialState && initialState.password) || "");
 
-    // Hardcode players if connectedIp is "번희수"
-    if (this.connectedIp === '번희수') {
-      this.$set(this.rosterPlayers, 'Home', hardcodedPlayers.map(p => ({ ...p })));
-      this.$set(this.rosterPlayers, 'Away', hardcodedPlayers.map(p => ({ ...p })));
-      this.$set(this.players, 'Home', hardcodedPlayers.filter(p => p.selected).map(p => ({ ...p })));
-      this.$set(this.players, 'Away', hardcodedPlayers.filter(p => p.selected).map(p => ({ ...p })));
+    // Hardcode players if connectedIp is "버니스" and sessionPassword is "04"
+    if (this.connectedIp === '버니스' && this.sessionPassword === '04') {
+      const homeRoster = hardcodedPlayers.map(p => ({ ...p, id: p.id + '_home' }));
+      const awayRoster = hardcodedPlayers.map(p => ({ ...p, id: p.id + '_away' }));
+      
+      this.$set(this.rosterPlayers, 'Home', homeRoster);
+      this.$set(this.rosterPlayers, 'Away', awayRoster);
+      
+      // We don't auto-select players to the active 5, but they are now in the "Roster" (선수 변경 modal)
       this.syncState();
     }
 

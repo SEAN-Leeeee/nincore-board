@@ -16,6 +16,9 @@ public class ClockService {
 
     @Scheduled(fixedRate = 1000)
     public void tick() {
+        long start = System.currentTimeMillis();
+        var states = stateService.getAllSessionStates();
+
         stateService.getAllSessionStates().forEach((sessionId, gameStateRef) -> {
             GameState currentState = gameStateRef.get();
             boolean isStateChanged = false;
@@ -46,8 +49,11 @@ public class ClockService {
                 String destination = "/subscribe/state/" + sessionId;
                 simpMessagingTemplate.convertAndSend(destination, currentState);
             }
-        });
 
+
+        });
+        long elapsed = System.currentTimeMillis() - start;
+//        log.info("[ClockService] 세션 수: {}, tick 소요시간: {}ms", states.size(), elapsed);
     }
 
 
