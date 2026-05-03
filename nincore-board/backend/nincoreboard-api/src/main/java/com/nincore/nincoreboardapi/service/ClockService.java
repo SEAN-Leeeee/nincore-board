@@ -50,7 +50,6 @@ public class ClockService {
                 simpMessagingTemplate.convertAndSend(destination, currentState);
             }
 
-
         });
         long elapsed = System.currentTimeMillis() - start;
 //        log.info("[ClockService] 세션 수: {}, tick 소요시간: {}ms", states.size(), elapsed);
