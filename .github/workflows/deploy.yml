@@ -1,40 +1,48 @@
 name: Deploy to EC2
-
 on:
   push:
     branches: [main]
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build backend
+        working-directory: nincore-board/backend/nincoreboard-api
+        run: ./gradlew build -x test
+
+      - name: Build frontend
+        working-directory: nincore-board/frontend/scoreboard-remote
+        run: |
+          npm install
+          npm run build
+
+      - name: Copy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "nincore-board/backend/nincoreboard-api/build/libs/nincoreboard-api-0.0.1-SNAPSHOT.jar,nincore-board/frontend/scoreboard-remote/dist"
+          target: "~/"
+
+      - name: Restart server
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/nincore-board/nincore-board
-
-            # 최신 코드 pull
-            git pull
-
-            # 백엔드 빌드
-            cd backend/nincoreboard-api
-            ./gradlew build
-            cd ../..
-
-            # 프론트엔드 빌드 & 배포
-            cd frontend/scoreboard-remote
-            npm install
-            npm run build
-            sudo cp -r dist/* /var/www/nincore-board/
-            cd ../..
-
-            # 백엔드 재시작
+            sudo cp -r ~/nincore-board/frontend/scoreboard-remote/dist/* /var/www/nincore-board/
             PID=$(pgrep -f 'nincoreboard-api.*\.jar' || true)
             if [ -n "$PID" ]; then
               kill -9 $PID
             fi
-            nohup java -jar backend/nincoreboard-api/build/libs/nincoreboard-api-0.0.1-SNAPSHOT.jar > nincore.log 2>&1 &
+            nohup java -jar ~/nincore-board/backend/nincoreboard-api/build/libs/nincoreboard-api-0.0.1-SNAPSHOT.jar > ~/nincore.log 2>&1 &
