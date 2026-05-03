@@ -40,11 +40,5 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            PID=$(pgrep -f 'nincoreboard-api.*\.jar' || true)
-            if [ -n "$PID" ]; then
-              kill -9 $PID
-              sleep 2
-            fi
-            nohup java -Xmx512m -jar ~/nincore-board/backend/nincoreboard-api/build/libs/nincoreboard-api-0.0.1-SNAPSHOT.jar > ~/nincore.log 2>&1 &disown $!
-            sleep 3
-            echo "done"
+            sudo cp -r ~/nincore-board/frontend/scoreboard-remote/dist/* /var/www/nincore-board/
+            sudo systemctl restart nincoreboard
