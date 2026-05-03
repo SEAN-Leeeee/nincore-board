@@ -43,6 +43,6 @@ jobs:
             sudo cp -r ~/nincore-board/frontend/scoreboard-remote/dist/* /var/www/nincore-board/
             PID=$(pgrep -f 'nincoreboard-api.*\.jar' || true)
             if [ -n "$PID" ]; then
-              kill -9 $PID
+            kill -9 $PID
             fi
-            nohup java -Xmx512m -jar ~/nincore-board/backend/nincoreboard-api/build/libs/nincoreboard-api-0.0.1-SNAPSHOT.jar > ~/nincore.log 2>&1 &
+            nohup java -Xmx512m -jar ~/nincore-board/backend/nincoreboard-api/build/libs/nincoreboard-api-0.0.1-SNAPSHOT.jar > ~/nincore.log 2>&1 &disown
